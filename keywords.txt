@@ -1,0 +1,53 @@
+#######################################
+# Syntax Coloring Map For DrawBot
+#######################################
+# Class
+#######################################
+
+DrawBot	KEYWORD1
+DrawBot_Colour KEYWORD1
+DrawBot_Lights KEYWORD1
+DrawBot_Vector3 KEYWORD1
+DrawBot_Motion KEYWORD1
+DrawBot_IRArray KEYWORD1
+DrawBot_IMUSettings KEYWORD1
+DrawBot_ColourSettings KEYWORD1
+DrawBot_ServoSettings KEYWORD1
+DrawBot_ToFSettings KEYWORD1
+DrawBot_MotorSettings KEYWORD1
+DrawBot_Settings KEYWORD1
+
+#######################################
+# Methods and Functions
+#######################################	
+
+Initialise			KEYWORD2
+SetWhiteLight			KEYWORD2
+SetIRDimLevel			KEYWORD2
+SetupIMU		KEYWORD2
+SetupColourSensor			KEYWORD2
+SetupToFSensor		KEYWORD2
+SetupMotors			KEYWORD2
+CalibrateIRArray		KEYWORD2
+CalibrateIMU		KEYWORD2
+SetLights			KEYWORD2
+GetCurrentLights		KEYWORD2
+UpdateBatteryLevel		KEYWORD2
+RaisePen			KEYWORD2
+LowerPen	KEYWORD2
+ReadColour	KEYWORD2
+ReadToFSensor	KEYWORD2
+ReadIRSensors	KEYWORD2
+ReadIMU		KEYWORD2
+EnableBumpInterrupt	KEYWORD2
+GetCurrentSettings	KEYWORD2
+GetDefaultSettings	KEYWORD2
+
+#######################################
+# Constants
+#######################################
+
+TOF_LEFT    LITERAL1
+TOF_CENTRE    LITERAL1
+TOF_RIGHT    LITERAL1
+
