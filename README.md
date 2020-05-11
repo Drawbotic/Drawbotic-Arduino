@@ -201,8 +201,13 @@ To read the motor encoders:
 ``` c++
 long m1Reading = bot.GetM1Encoder();
 long m2Reading = bot.GetM2Encoder();
+
+long m1Delta = bot.GetM1EncoderDelta();
+long m2Delta = bot.GetM2EncoderDelta();
 ```
 Values are increased when encoders spin in one direction and decreased when spun in the other direction.
+
+The delta methods return the change in count since the last time the method was called.
 
 ---
 
@@ -256,10 +261,13 @@ The first parameter identifies the motor (1 or 2), the second parameter is the d
 ### Pen Servo
 The pen mechanism can be controlled as follows:
 ``` c++
-bot.RaisePen();
-bot.LowerPen();
+bot.SetPenUp(true); //Raise pen holder
+bot.SetPenUp(false);//Lower pen holder
+
+bot.SetPenServo(90.0);
 ```
 The two positions that the servo moves to are defined in the servo settings struct.
+SetPenServo directly writes that value to the servo.
 
 ---
 ### Calibrating the IMU
