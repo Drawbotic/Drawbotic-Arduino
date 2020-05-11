@@ -18,7 +18,7 @@ void setup()
     bot.EnableBumpInterrupt();
     attachInterrupt(BMX_INT_1, bumpInt, RISING);
     
-    bot.LowerPen();
+    bot.SetPenUp(false);
 
     //bot.CalibrateIRArray();   //Uncomment if you want the robot to calibrate the IR sensors. Robot will spin on spot for a few seconds!
 }

@@ -18,11 +18,11 @@ void DrawBot::m1EncoderCallBack()
 {
     if(s_instance)
     {
-        if(digitalRead(M1_E_A) == digitalRead(M1_E_B))
+        if(digitalRead(M1_E_A) && !digitalRead(M1_E_B))
         {
             s_instance->m_m1En++;
         }
-        else
+        else if(digitalRead(M1_E_A) && digitalRead(M1_E_B))
         {
             s_instance->m_m1En--;
         }
@@ -33,11 +33,11 @@ void DrawBot::m2EncoderCallBack()
 {
     if(s_instance)
     {
-        if(digitalRead(M2_E_A) == digitalRead(M2_E_B))
+        if(digitalRead(M2_E_A) && !digitalRead(M2_E_B))
         {
             s_instance->m_m2En++;
         }
-        else
+        else if(digitalRead(M2_E_A) && digitalRead(M2_E_B))
         {
             s_instance->m_m2En--;
         }
@@ -63,6 +63,8 @@ DrawBot::DrawBot() :
     
     m_m1En = 0;
     m_m2En = 0;
+    m_lastM1En = 0;
+    m_lastM2En = 0;
 
     m_currentSettings = GetDefaultSettings();
     m_imu = BMX160::GetInstance();
@@ -226,16 +228,8 @@ void DrawBot::SetupMotors(DrawBot_MotorSettings settings)
 
     if(settings.useEncoders)
     {
-        pinMode(M1_E_A, INPUT);
-        pinMode(M1_E_B, INPUT);
-        pinMode(M2_E_A, INPUT);
-        pinMode(M2_E_B, INPUT);
-        digitalWrite(M1_E_A, HIGH);
-        digitalWrite(M1_E_B, HIGH);
-        digitalWrite(M2_E_A, HIGH);
-        digitalWrite(M2_E_B, HIGH);
-        attachInterrupt(M1_E_A, m1EncoderCallBack, CHANGE);
-        attachInterrupt(M2_E_A, m2EncoderCallBack, CHANGE);
+        attachInterrupt(M1_E_A, m1EncoderCallBack, RISING);
+        attachInterrupt(M2_E_A, m2EncoderCallBack, RISING);
     }
     else
     {
@@ -393,16 +387,18 @@ void DrawBot::SetMotorSpeed(int motor, double speed)
 
 long DrawBot::GetM1EncoderDelta()
 {
+    long delta = m_m1En - m_lastM1En;
     m_lastM1En = m_m1En;
 
-    return m_m1En - m_lastM1En;
+    return delta;
 }
 
 long DrawBot::GetM2EncoderDelta()
 {
+    long delta = m_m2En - m_lastM2En;
     m_lastM2En = m_m2En;
 
-    return m_m2En - m_lastM2En;
+    return delta;
 }
 
 DrawBot_Colour DrawBot::ReadColour()
