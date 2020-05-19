@@ -4,7 +4,7 @@ An Arduino based library for the DrawBot board made in SensiLab
 
 ---
 ## Required Arduino Libraries
-* The SensiLab BMX160-Arduino 9DoF IMU library
+* The SensiLab BMX160-Arduino 9DoF IMU library - https://gitlab.erc.monash.edu.au/sensilab/drawbot/bmx160-arduino
 * Adafruit_NeoPixel library - https://github.com/adafruit/Adafruit_NeoPixel
 * Adafruit_TCS34725 Colour Sensor library - https://github.com/adafruit/Adafruit_TCS34725
 * Pololu VL53L0X ToF Sensor Library - https://github.com/pololu/vl53l0x-arduino
