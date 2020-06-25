@@ -282,4 +282,4 @@ bot.CalibrateIRArray();
 Place a black and white calibration pattern under the DrawBot. The DrawBot will spin for around 10 seconds measuring the pattern and saving the lows and highs for each sensor.
 
 ---
-### © SensiLab 2019
+### © SensiLab 2020
