@@ -27,8 +27,8 @@ void loop()
 
     Serial.println(slavePower);
 
-    bot.SetMotorSpeed(1, power * -1);
-    bot.SetMotorSpeed(2, slavePower);  //Negate the speed to deal with mirrored motors
+    bot.SetMotorSpeed(1, power);
+    bot.SetMotorSpeed(2, slavePower * -1);  //Negate the speed to deal with mirrored motors
 
     bot.UpdateBatteryLevel();
 }
