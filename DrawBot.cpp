@@ -243,7 +243,7 @@ void DrawBot::SetupMotors(DrawBot_MotorSettings settings)
 
 void DrawBot::CalibrateIMU()
 {
-    //TODO: IMU Calibration
+    m_imu->BeginFOC(0, 0, 1);
 }
 
 void DrawBot::CalibrateIRArray()
@@ -412,11 +412,11 @@ DrawBot_Colour DrawBot::ReadColour()
 
 DrawBot_IRArray DrawBot::ReadIRSensors(bool calibrated)
 {
-    int ir1 = analogRead(IR1);
-    int ir2 = analogRead(IR2);
-    int ir3 = analogRead(IR3);
-    int ir4 = analogRead(IR4);
-    int ir5 = analogRead(IR5);
+    int ir1 = map(analogRead(IR1), 0, 1023, 0, 255);
+    int ir2 = map(analogRead(IR2), 0, 1023, 0, 255);
+    int ir3 = map(analogRead(IR3), 0, 1023, 0, 255);
+    int ir4 = map(analogRead(IR4), 0, 1023, 0, 255);
+    int ir5 = map(analogRead(IR5), 0, 1023, 0, 255);
 
     if(calibrated)
     {
@@ -428,11 +428,11 @@ DrawBot_IRArray DrawBot::ReadIRSensors(bool calibrated)
     }
 
     DrawBot_IRArray result;
+    result.farLeft = ir5;
+    result.left = ir3;
     result.centre = ir1;
-    result.left = ir2;
-    result.right = ir3;
-    result.farLeft = ir4;
-    result.farRight = ir5;
+    result.right = ir2;
+    result.farRight = ir4;
     return result;
 }
 

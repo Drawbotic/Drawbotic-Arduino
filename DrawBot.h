@@ -36,11 +36,11 @@ struct DrawBot_Motion
 
 struct DrawBot_IRArray
 {
-    int centre;
-    int left;
-    int right;
-    int farLeft;
-    int farRight;
+    uint8_t farLeft;
+    uint8_t left;
+    uint8_t centre;
+    uint8_t right;
+    uint8_t farRight;
 };
 
 struct DrawBot_IMUSettings
