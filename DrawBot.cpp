@@ -112,10 +112,6 @@ bool DrawBot::Initialise(DrawBot_Settings settings)
     //Setup servo
     m_penLift.attach(settings.servo.pin);
 
-    //Setup neopixels
-    m_lights.begin();
-    SetLights(m_currentLights);
-
     //Turn off TCS
     pinMode(TCS_EN, OUTPUT);
     digitalWrite(TCS_EN, LOW);
@@ -143,6 +139,11 @@ bool DrawBot::Initialise(DrawBot_Settings settings)
 
     //Setup IMU
     SetupIMU(settings.imu);
+
+    //Setup neopixels
+    m_lights.begin();
+    SetLights(m_currentLights);
+    m_lights.show();
 }
 
 void DrawBot::SetWhiteLight(bool on)
