@@ -24,7 +24,7 @@ struct DrawBot_Lights
 
 struct DrawBot_Vector3
 {
-    double x, y, z;
+    float x, y, z;
 };
 
 struct DrawBot_Motion
@@ -144,6 +144,7 @@ public:
     DrawBot_IRArray ReadIRSensors(bool calibrated = true);
     DrawBot_Motion ReadIMU();
     void EnableBumpInterrupt(uint8_t threshold = 20, uint8_t duration = 10, BMX160_InterruptPin pin = BMX160_INT_PIN_1);
+    void DisableBumpInterrupt();
 
     //Settings structure
     DrawBot_Settings GetCurrentSettings() { return m_currentSettings; }

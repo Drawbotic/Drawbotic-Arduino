@@ -464,3 +464,8 @@ void DrawBot::EnableBumpInterrupt(uint8_t threshold, uint8_t duration, BMX160_In
 {
     m_imu->AddHighGInterrupt(pin, threshold, duration, BMX160_HIGH_HY_1, BMX160_XYZ_AXES);
 }
+
+void DrawBot::DisableBumpInterrupt()
+{
+    m_imu->RemoveInterrupt(BMX160_HIGH_G_INT);
+}
