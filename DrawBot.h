@@ -73,19 +73,13 @@ struct DrawBot_ToFSettings
     uint8_t finalPclks;
 };
 
-struct DrawBot_MotorSettings
-{
-    bool enabled;
-    bool useEncoders;
-};
-
 struct DrawBot_Settings
 {
     DrawBot_IMUSettings imu;
     DrawBot_ColourSettings colourSensor;
     DrawBot_ServoSettings servo;
     DrawBot_ToFSettings tof;
-    DrawBot_MotorSettings motors;
+    bool useEncoders;
     bool whiteLightOn;
     int irDimLevel;
 };
@@ -113,7 +107,7 @@ public:
     void SetupColourSensor(DrawBot_ColourSettings settings);
     void SetupServo(DrawBot_ServoSettings settings);
     void SetupToFSensor(int number, DrawBot_ToFSettings settings);
-    void SetupMotors(DrawBot_MotorSettings settings);
+    void SetupMotors(bool useEncoders);
 
     //Sensor calibrations
     void CalibrateIRArray();

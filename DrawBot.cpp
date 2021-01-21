@@ -7,9 +7,9 @@ const DrawBot_Settings DrawBot::s_defaultSettings = {
     { BMX160_ACCEL_RATE_1600HZ, BMX160_ACCEL_RANGE_2G, 
       BMX160_GYRO_RATE_1600HZ, BMX160_GYRO_RANGE_1000_DPS },    //IMU Defaults
     { TCS34725_GAIN_4X, TCS34725_INTEGRATIONTIME_24MS },        //Colour sensor defaults
-    { S1_PWM, 25, 90 },                                    //Servo defaults
+    { S_PWM, 25, 90 },                                          //Servo defaults
     { 500, 0.25f, 33000, 14, 10 },                              //ToF defaults
-    { true, true },                                             //Motor defaults
+    true,                                                       //Motor defaults
     true,                                                       //White Light default
     0                                                           //IR Dim default
 };
@@ -81,47 +81,46 @@ bool DrawBot::Initialise(DrawBot_Settings settings)
 {
     Wire.begin();
     analogWriteResolution(16);
-
+    
     //Set up motor driver
-    SetupMotors(settings.motors);
+    SetupMotors(settings.useEncoders);
     
     //Setup IR LEDs
-    pinMode(IR_CTRL_1, OUTPUT);
-    pinMode(IR_CTRL_2, OUTPUT);
-    digitalWrite(IR_CTRL_1, HIGH);
-    digitalWrite(IR_CTRL_2, HIGH);
+    pinMode(IR_CTRL, OUTPUT);
+    digitalWrite(IR_CTRL, HIGH);
     SetIRDimLevel(settings.irDimLevel);
     m_currentSettings.irDimLevel = settings.irDimLevel;
-
+    
     pinMode(IR1, INPUT);
     pinMode(IR2, INPUT);
     pinMode(IR3, INPUT);
     pinMode(IR4, INPUT);
     pinMode(IR5, INPUT);
-
+    
     pinMode(BATT_LVL1, OUTPUT);
     pinMode(BATT_LVL2, OUTPUT);
     pinMode(BATT_LVL3, OUTPUT);
     pinMode(BATT_LVL4, OUTPUT);
-
+    
     //Setup white LED
     pinMode(LED_EN, OUTPUT);
     SetWhiteLight(settings.whiteLightOn);
     m_currentSettings.whiteLightOn = settings.whiteLightOn;
-
+    
     //Setup servo
     m_penLift.attach(settings.servo.pin);
-
+    
     //Turn off TCS
     pinMode(TCS_EN, OUTPUT);
     digitalWrite(TCS_EN, LOW);
+    
     //Turn off ToFs
     for(int i = 0; i < TOF_COUNT; i++)
     {
         pinMode(TOF_EN_PINS[i], OUTPUT);
         digitalWrite(TOF_EN_PINS[i], LOW);
     }
-
+    
     //Setup tof sensors
     for(int i = 0; i < TOF_COUNT; i++)
     {
@@ -131,19 +130,19 @@ bool DrawBot::Initialise(DrawBot_Settings settings)
         m_tofs[i].setAddress(TOF_ADDRESSES[i]);
         SetupToFSensor(i, settings.tof);
     }
-
+   
     //Setup colour sensor
     digitalWrite(TCS_EN, HIGH);
     delay(TCS_BOOT_DELAY_MS);
     SetupColourSensor(settings.colourSensor);
-
+   
     //Setup IMU
     SetupIMU(settings.imu);
-
+   
     //Setup neopixels
     m_lights.begin();
     SetLights(m_currentLights);
-    m_lights.show();
+    m_lights.show();  
 }
 
 void DrawBot::SetWhiteLight(bool on)
@@ -155,8 +154,7 @@ void DrawBot::SetWhiteLight(bool on)
 void DrawBot::SetIRDimLevel(int level)
 {
     //Reset both LED drivers
-    digitalWrite(IR_CTRL_1, LOW);
-    digitalWrite(IR_CTRL_2, LOW);
+    digitalWrite(IR_CTRL, LOW);
     delay(10);
 
     if(level > 32)
@@ -167,11 +165,9 @@ void DrawBot::SetIRDimLevel(int level)
     //Count to the right pulses
     for(int i = 0; i <= level; i++)
     {
-        digitalWrite(IR_CTRL_1, LOW);
-        digitalWrite(IR_CTRL_2, LOW);
+        digitalWrite(IR_CTRL, LOW);
         delayMicroseconds(10);
-        digitalWrite(IR_CTRL_1, HIGH);
-        digitalWrite(IR_CTRL_2, HIGH);
+        digitalWrite(IR_CTRL, HIGH);
         delayMicroseconds(10);
     }
     m_currentSettings.irDimLevel = level;
@@ -218,16 +214,14 @@ void DrawBot::SetupToFSensor(int index, DrawBot_ToFSettings settings)
     m_currentSettings.tof = settings;
 }
 
-void DrawBot::SetupMotors(DrawBot_MotorSettings settings)
+void DrawBot::SetupMotors(bool encoders)
 {
     pinMode(M1_DIRA, OUTPUT);
     pinMode(M1_DIRB, OUTPUT);
     pinMode(M2_DIRA, OUTPUT);
     pinMode(M2_DIRB, OUTPUT);
-    pinMode(MOTOR_EN, OUTPUT);
-    digitalWrite(MOTOR_EN, settings.enabled);
 
-    if(settings.useEncoders)
+    if(encoders)
     {
         attachInterrupt(M1_E_A, m1EncoderCallBack, RISING);
         attachInterrupt(M2_E_A, m2EncoderCallBack, RISING);
@@ -238,7 +232,7 @@ void DrawBot::SetupMotors(DrawBot_MotorSettings settings)
         detachInterrupt(M2_E_A);
     }
     
-    m_currentSettings.motors = settings;
+    m_currentSettings.useEncoders = encoders;
 }
 
 
