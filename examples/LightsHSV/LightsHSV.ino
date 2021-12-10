@@ -1,7 +1,7 @@
-#include <DrawBot.h>
+#include <Drawbotic_DB1.h>
 #include "HSV2RGB.h"
 
-DrawBot bot;
+DB1 bot;
 
 //Used for delta time calc
 int lastMS = 0;
@@ -32,7 +32,7 @@ void loop()
     rgb lightColour = hsv2rgb({hue * 360.0, 1.0, 1.0});
 
     //Update the lights with new colour
-    DrawBot_Lights newLights;
+    DB1_Lights newLights;
     for(int i = 0; i < LIGHT_COUNT; i++)
         newLights.colours[i] = { (int)(255 * lightColour.r), (int)(255 * lightColour.g), (int)(255 * lightColour.b) };
     bot.SetLights(newLights);

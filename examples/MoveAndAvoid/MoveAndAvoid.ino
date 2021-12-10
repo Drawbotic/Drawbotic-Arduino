@@ -1,12 +1,12 @@
-#include <DrawBot.h>
+#include <Drawbotic_DB1.h>
 
 #define TOF_TH 80   //Distance from ToF sensor that triggers the bot to avoid
 
-DrawBot bot;
+DB1 bot;
 
 double kp = 0.001;      //Determines the "strength" of the motor correction.
 double power = 0.5;     //The forward speed
-double slavePower = 0.5;  //The modified power for the second motor
+double followPower = 0.5;  //The modified power for the second motor
 
 void setup()
 {
@@ -72,9 +72,9 @@ void loop()
         double error = bot.GetM1EncoderDelta() - bot.GetM2EncoderDelta();
     
         //Calculate the second motor power based on the error value and the correction "strength" factor
-        slavePower += error * kp;
-        bot.SetMotorSpeed(1, power * -1);
-        bot.SetMotorSpeed(2, slavePower);  //Negate the speed to deal with mirrored motors
+        followPower += error * kp;
+        bot.SetMotorSpeed(1, power);
+        bot.SetMotorSpeed(2, followPower);  //Negate the speed to deal with mirrored motors
     }
     
     bot.UpdateBatteryLevel();   //Update the battery level

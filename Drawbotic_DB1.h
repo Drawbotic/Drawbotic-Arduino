@@ -1,5 +1,5 @@
-#ifndef DRAWBOT_H
-#define DRAWBOT_H
+#ifndef DRAWBOTICDB1_H
+#define DRAWBOTICDB1_H
 
 #include <Wire.h>
 #include <Servo.h>
@@ -8,33 +8,33 @@
 #include <VL53L0X.h>
 #include <BMX160.h>
 
-#include "DrawBotDefines.h"
+#include "Drawbotic_DB1_Defines.h"
 
-struct DrawBot_Colour
+struct DB1_Colour
 {
     uint8_t red;
     uint8_t green;
     uint8_t blue;
 };
 
-struct DrawBot_Lights
+struct DB1_Lights
 {
-    DrawBot_Colour colours[LIGHT_COUNT];
+    DB1_Colour colours[LIGHT_COUNT];
 };
 
-struct DrawBot_Vector3
+struct DB1_Vector3
 {
     float x, y, z;
 };
 
-struct DrawBot_Motion
+struct DB1_Motion
 {
     DrawBot_Vector3 accel;
     DrawBot_Vector3 gyro;
     DrawBot_Vector3 mag;
 };
 
-struct DrawBot_IRArray
+struct DB1_IRArray
 {
     uint8_t farLeft;
     uint8_t left;
@@ -43,7 +43,7 @@ struct DrawBot_IRArray
     uint8_t farRight;
 };
 
-struct DrawBot_IMUSettings
+struct DB1_IMUSettings
 {
     BMX160_AccelRate accelRate;
     BMX160_AccelRange accelRange;
@@ -51,20 +51,20 @@ struct DrawBot_IMUSettings
     BMX160_GyroRange gyroRange;
 };
 
-struct DrawBot_ColourSettings
+struct DB1_ColourSettings
 {
     tcs34725Gain_t gain;
     tcs34725IntegrationTime_t intergrationTime;
 };
 
-struct DrawBot_ServoSettings
+struct DB1_ServoSettings
 {
     int pin;
     double penUpPosition;
     double penDownPosition;
 };
 
-struct DrawBot_ToFSettings
+struct DB1_ToFSettings
 {
     int timeout;
     float signalRateLimit;
@@ -73,40 +73,42 @@ struct DrawBot_ToFSettings
     uint8_t finalPclks;
 };
 
-struct DrawBot_Settings
+struct DB1_Settings
 {
-    DrawBot_IMUSettings imu;
-    DrawBot_ColourSettings colourSensor;
-    DrawBot_ServoSettings servo;
-    DrawBot_ToFSettings tof;
+    DB1_IMUSettings imu;
+    DB1_ColourSettings colourSensor;
+    DB1_ServoSettings servo;
+    DB1_ToFSettings tof;
     bool useEncoders;
+    bool m1Flipped;
+    bool m2Flipped;
     bool whiteLightOn;
     int irDimLevel;
 };
 
-enum DrawBot_ToFLocation
+enum DB1_ToFLocation
 {
     TOF_LEFT,
     TOF_CENTRE,
     TOF_RIGHT
 };
 
-class DrawBot
+class DB1
 {
 public:
-    DrawBot();
+    DB1();
 
     //Overall bot setup
     bool Initialise();
-    bool Initialise(DrawBot_Settings settings);
+    bool Initialise(DB1_Settings settings);
     
     //Setting individual bot elements
     void SetWhiteLight(bool on);
     void SetIRDimLevel(int level);
-    void SetupIMU(DrawBot_IMUSettings settings);
-    void SetupColourSensor(DrawBot_ColourSettings settings);
-    void SetupServo(DrawBot_ServoSettings settings);
-    void SetupToFSensor(int number, DrawBot_ToFSettings settings);
+    void SetupIMU(DB1_IMUSettings settings);
+    void SetupColourSensor(DB1_ColourSettings settings);
+    void SetupServo(DB1_ServoSettings settings);
+    void SetupToFSensor(int number, DB1_ToFSettings settings);
     void SetupMotors(bool useEncoders);
 
     //Sensor calibrations
@@ -114,8 +116,8 @@ public:
     void CalibrateIMU();
     
     //RGB Lighting
-    void SetLights(DrawBot_Lights lights);
-    DrawBot_Lights GetCurrentLights() { return m_currentLights; }
+    void SetLights(DB1_Lights lights);
+    DB1_Lights GetCurrentLights() { return m_currentLights; }
 
     //Battery Fuel Guage
     float UpdateBatteryLevel(bool lights = true);
@@ -133,19 +135,19 @@ public:
     long GetM2EncoderDelta();
 
     //Sensor access
-    DrawBot_Colour ReadColour();
-    int ReadToFSensor(DrawBot_ToFLocation location);
-    DrawBot_IRArray ReadIRSensors(bool calibrated = true);
-    DrawBot_Motion ReadIMU();
+    DB1_Colour ReadColour();
+    int ReadToFSensor(DB1_ToFLocation location);
+    DB1_IRArray ReadIRSensors(bool calibrated = true);
+    DB1_Motion ReadIMU();
     void EnableBumpInterrupt(uint8_t threshold = 20, uint8_t duration = 10, BMX160_InterruptPin pin = BMX160_INT_PIN_1);
     void DisableBumpInterrupt();
 
     //Settings structure
-    DrawBot_Settings GetCurrentSettings() { return m_currentSettings; }
-    static DrawBot_Settings GetDefaultSettings() { return s_defaultSettings; }
+    DB1_Settings GetCurrentSettings() { return m_currentSettings; }
+    static DB1_Settings GetDefaultSettings() { return s_defaultSettings; }
 
 private:
-    DrawBot_Settings m_currentSettings;
+    DB1_Settings m_currentSettings;
 
     Servo m_penLift;
     Adafruit_NeoPixel m_lights;
@@ -153,7 +155,7 @@ private:
     VL53L0X m_tofs[TOF_COUNT];
     BMX160* m_imu;
 
-    DrawBot_Lights m_currentLights;
+    DB1_Lights m_currentLights;
 
     int m_irHigh[IR_COUNT];
     int m_irLow[IR_COUNT];
@@ -165,8 +167,8 @@ private:
     double m_m1Speed;
     double m_m2Speed;
 
-    static DrawBot* s_instance;
-    const static DrawBot_Settings s_defaultSettings;
+    static DB1* s_instance;
+    const static DB1_Settings s_defaultSettings;
 
     static void m1EncoderCallBack();
     static void m2EncoderCallBack();

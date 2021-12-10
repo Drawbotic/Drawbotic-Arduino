@@ -1,43 +1,47 @@
-#include "DrawBot.h"
+#include "Drawbotic_DB1.h"
 
 //------- Static Methods -------//
-DrawBot* DrawBot::s_instance = NULL;
+DB1* DB1::s_instance = NULL;
 
-const DrawBot_Settings DrawBot::s_defaultSettings = {
+const DB1_Settings DB1::s_defaultSettings = {
     { BMX160_ACCEL_RATE_1600HZ, BMX160_ACCEL_RANGE_2G, 
       BMX160_GYRO_RATE_1600HZ, BMX160_GYRO_RANGE_1000_DPS },    //IMU Defaults
     { TCS34725_GAIN_4X, TCS34725_INTEGRATIONTIME_24MS },        //Colour sensor defaults
-    { S_PWM, 25, 90 },                                          //Servo defaults
-    { 500, 0.25f, 33000, 14, 10 },                              //ToF defaults
-    true,                                                       //Motor defaults
+    { S_PWM, SERVO_UP_DEFAULT, SERVO_DOWN_DEFAULT },            //Servo defaults
+    { TOF_TIMEOUT_DEFAULT, TOF_SIGLIM_DEFAULT, 
+      TOF_TIMING_BUDGET_DEFAULT, TOF_PRE_PCLKS_DEFAULT, 
+      TOF_FIN_PCLKS_DEFAULT },                                  //ToF defaults
+    true,                                                       //Use encoders
+    false,                                                      //m1 flipped
+    false,                                                      //m2 flipped
     true,                                                       //White Light default
     0                                                           //IR Dim default
 };
 
-void DrawBot::m1EncoderCallBack()
+void DB1::m1EncoderCallBack()
 {
     if(s_instance)
     {
-        if(digitalRead(M1_E_A) && !digitalRead(M1_E_B))
+        if(digitalRead(M1_E_A) == digitalRead(M1_E_B))
         {
             s_instance->m_m1En++;
         }
-        else if(digitalRead(M1_E_A) && digitalRead(M1_E_B))
+        else// if(digitalRead(M1_E_A) && digitalRead(M1_E_B))
         {
             s_instance->m_m1En--;
         }
     }
 }
 
-void DrawBot::m2EncoderCallBack()
+void DB1::m2EncoderCallBack()
 {
     if(s_instance)
     {
-        if(digitalRead(M2_E_A) && !digitalRead(M2_E_B))
+        if(digitalRead(M2_E_A) == digitalRead(M2_E_B))
         {
             s_instance->m_m2En++;
         }
-        else if(digitalRead(M2_E_A) && digitalRead(M2_E_B))
+        else// if(digitalRead(M2_E_A) && digitalRead(M2_E_B))
         {
             s_instance->m_m2En--;
         }
@@ -45,7 +49,7 @@ void DrawBot::m2EncoderCallBack()
 }
 
 //------- Public Methods -------//
-DrawBot::DrawBot() : 
+DB1::DB1() : 
     m_lights(LIGHT_COUNT, RGB_DOUT, NEO_GRB + NEO_KHZ800)
 {
     for(int i = 0; i < LIGHT_COUNT; i++)
@@ -72,24 +76,26 @@ DrawBot::DrawBot() :
     s_instance = this;
 }
 
-bool DrawBot::Initialise()
+bool DB1::Initialise()
 {
-    Initialise(DrawBot::GetDefaultSettings());
+    Initialise(DB1::GetDefaultSettings());
 }
 
-bool DrawBot::Initialise(DrawBot_Settings settings)
+bool DB1::Initialise(DB1_Settings settings)
 {
     Wire.begin();
     analogWriteResolution(16);
     
     //Set up motor driver
     SetupMotors(settings.useEncoders);
+    Serial.println("Motors Done");
     
     //Setup IR LEDs
     pinMode(IR_CTRL, OUTPUT);
     digitalWrite(IR_CTRL, HIGH);
     SetIRDimLevel(settings.irDimLevel);
     m_currentSettings.irDimLevel = settings.irDimLevel;
+    Serial.println("IR Done");
     
     pinMode(IR1, INPUT);
     pinMode(IR2, INPUT);
@@ -106,13 +112,16 @@ bool DrawBot::Initialise(DrawBot_Settings settings)
     pinMode(LED_EN, OUTPUT);
     SetWhiteLight(settings.whiteLightOn);
     m_currentSettings.whiteLightOn = settings.whiteLightOn;
+    Serial.println("White Done");
     
     //Setup servo
     m_penLift.attach(settings.servo.pin);
+    Serial.println("Servo Done");
     
     //Turn off TCS
     pinMode(TCS_EN, OUTPUT);
     digitalWrite(TCS_EN, LOW);
+    Serial.println("Turn off colour");
     
     //Turn off ToFs
     for(int i = 0; i < TOF_COUNT; i++)
@@ -120,38 +129,47 @@ bool DrawBot::Initialise(DrawBot_Settings settings)
         pinMode(TOF_EN_PINS[i], OUTPUT);
         digitalWrite(TOF_EN_PINS[i], LOW);
     }
-    
+    Serial.println("Turn off ToFs");
+
     //Setup tof sensors
     for(int i = 0; i < TOF_COUNT; i++)
     {
         digitalWrite(TOF_EN_PINS[i], HIGH);
+        Serial.print("Turnning on pin ");
+        Serial.println(TOF_EN_PINS[i]);
         delay(TOF_BOOT_DELAY_MS);
         m_tofs[i] = VL53L0X();
         m_tofs[i].setAddress(TOF_ADDRESSES[i]);
         SetupToFSensor(i, settings.tof);
+        Serial.print("Set up complete for ToF 0x");
+        Serial.println(TOF_ADDRESSES[i], HEX);
     }
+    Serial.println("Tofs Done");
    
     //Setup colour sensor
     digitalWrite(TCS_EN, HIGH);
     delay(TCS_BOOT_DELAY_MS);
     SetupColourSensor(settings.colourSensor);
+    Serial.println("Colour Done");
    
     //Setup IMU
     SetupIMU(settings.imu);
+    Serial.println("IMU Done");
    
     //Setup neopixels
     m_lights.begin();
     SetLights(m_currentLights);
     m_lights.show();  
+    Serial.println("RGB Done");
 }
 
-void DrawBot::SetWhiteLight(bool on)
+void DB1::SetWhiteLight(bool on)
 {
     m_currentSettings.whiteLightOn = on;
     digitalWrite(LED_EN, on);
 }
 
-void DrawBot::SetIRDimLevel(int level)
+void DB1::SetIRDimLevel(int level)
 {
     //Reset both LED drivers
     digitalWrite(IR_CTRL, LOW);
@@ -173,7 +191,7 @@ void DrawBot::SetIRDimLevel(int level)
     m_currentSettings.irDimLevel = level;
 }
 
-void DrawBot::SetupIMU(DrawBot_IMUSettings settings)
+void DB1::SetupIMU(DB1_IMUSettings settings)
 {
     m_imu->Init(true);
     m_imu->SetAccelRange(settings.accelRange);
@@ -184,7 +202,7 @@ void DrawBot::SetupIMU(DrawBot_IMUSettings settings)
     m_currentSettings.imu = settings;
 }
 
-void DrawBot::SetupColourSensor(DrawBot_ColourSettings settings)
+void DB1::SetupColourSensor(DB1_ColourSettings settings)
 {
     m_colourTCS.begin();
     m_colourTCS.setGain(settings.gain);
@@ -193,7 +211,7 @@ void DrawBot::SetupColourSensor(DrawBot_ColourSettings settings)
     m_currentSettings.colourSensor = settings;
 }
 
-void DrawBot::SetupServo(DrawBot_ServoSettings settings)
+void DB1::SetupServo(DB1_ServoSettings settings)
 {
     if(!m_penLift.attached())
         m_penLift.attach(settings.pin);
@@ -201,7 +219,7 @@ void DrawBot::SetupServo(DrawBot_ServoSettings settings)
     m_currentSettings.servo = settings;
 }
 
-void DrawBot::SetupToFSensor(int index, DrawBot_ToFSettings settings)
+void DB1::SetupToFSensor(int index, DB1_ToFSettings settings)
 {
     m_tofs[index].init();
     m_tofs[index].setTimeout(settings.timeout);
@@ -214,7 +232,7 @@ void DrawBot::SetupToFSensor(int index, DrawBot_ToFSettings settings)
     m_currentSettings.tof = settings;
 }
 
-void DrawBot::SetupMotors(bool encoders)
+void DB1::SetupMotors(bool encoders)
 {
     pinMode(M1_DIRA, OUTPUT);
     pinMode(M1_DIRB, OUTPUT);
@@ -223,8 +241,8 @@ void DrawBot::SetupMotors(bool encoders)
 
     if(encoders)
     {
-        attachInterrupt(M1_E_A, m1EncoderCallBack, RISING);
-        attachInterrupt(M2_E_A, m2EncoderCallBack, RISING);
+        attachInterrupt(M1_E_A, m1EncoderCallBack, CHANGE);
+        attachInterrupt(M2_E_A, m2EncoderCallBack, CHANGE);
     }
     else
     {
@@ -236,12 +254,12 @@ void DrawBot::SetupMotors(bool encoders)
 }
 
 
-void DrawBot::CalibrateIMU()
+void DB1::CalibrateIMU()
 {
     m_imu->BeginFOC(0, 0, 1);
 }
 
-void DrawBot::CalibrateIRArray()
+void DB1::CalibrateIRArray()
 {
     for(int i = 0; i < IR_COUNT; i++)
     {
@@ -285,7 +303,7 @@ void DrawBot::CalibrateIRArray()
     SetMotorSpeed(2, 0.0);
 }
 
-void DrawBot::SetLights(DrawBot_Lights lights)
+void DB1::SetLights(DB1_Lights lights)
 {
     m_lights.clear();
     for(int i = 0; i < LIGHT_COUNT; i++)
@@ -296,7 +314,7 @@ void DrawBot::SetLights(DrawBot_Lights lights)
     m_currentLights = lights;
 }
 
-float DrawBot::UpdateBatteryLevel(bool lights)
+float DB1::UpdateBatteryLevel(bool lights)
 {
     int battLevel = analogRead(V_DIV_BATT);
 
@@ -325,7 +343,7 @@ float DrawBot::UpdateBatteryLevel(bool lights)
     return percentage;
 }
 
-void DrawBot::SetPenUp(bool up)
+void DB1::SetPenUp(bool up)
 {
     if(up)
     {
@@ -337,13 +355,13 @@ void DrawBot::SetPenUp(bool up)
     }
 }
 
-void DrawBot::SetPenServo(double pos)
+void DB1::SetPenServo(double pos)
 {
     double newPos = mapf(pos, 0.0, 1.0, m_currentSettings.servo.penDownPosition, m_currentSettings.servo.penUpPosition);
     m_penLift.write(newPos);
 }
 
-void DrawBot::SetMotorSpeed(int motor, double speed)
+void DB1::SetMotorSpeed(int motor, double speed)
 {
     bool direction = false;
     if(speed > 0)
@@ -354,13 +372,13 @@ void DrawBot::SetMotorSpeed(int motor, double speed)
     {
         if(direction)
         {
-            digitalWrite(M1_DIRA, LOW);
-            digitalWrite(M1_DIRB, HIGH);
+            digitalWrite(M1_DIRA, HIGH);
+            digitalWrite(M1_DIRB, LOW);
         }
         else
         {
-            digitalWrite(M1_DIRA, HIGH);
-            digitalWrite(M1_DIRB, LOW);
+            digitalWrite(M1_DIRA, LOW);
+            digitalWrite(M1_DIRB, HIGH);
         }
         analogWrite(M1_PWM, (int)pwmVal);
     }
@@ -380,7 +398,7 @@ void DrawBot::SetMotorSpeed(int motor, double speed)
     }
 }
 
-long DrawBot::GetM1EncoderDelta()
+long DB1::GetM1EncoderDelta()
 {
     long delta = m_m1En - m_lastM1En;
     m_lastM1En = m_m1En;
@@ -388,7 +406,7 @@ long DrawBot::GetM1EncoderDelta()
     return delta;
 }
 
-long DrawBot::GetM2EncoderDelta()
+long DB1::GetM2EncoderDelta()
 {
     long delta = m_m2En - m_lastM2En;
     m_lastM2En = m_m2En;
@@ -396,16 +414,16 @@ long DrawBot::GetM2EncoderDelta()
     return delta;
 }
 
-DrawBot_Colour DrawBot::ReadColour()
+DB1_Colour DB1::ReadColour()
 {
     float r, g, b;
     m_colourTCS.getRGB(&r, &g, &b);
 
-    DrawBot_Colour colour = { (uint8_t)r, (uint8_t)g, (uint8_t)b };
+    DB1_Colour colour = { (uint8_t)r, (uint8_t)g, (uint8_t)b };
     return colour;
 }
 
-DrawBot_IRArray DrawBot::ReadIRSensors(bool calibrated)
+DB1_IRArray DB1::ReadIRSensors(bool calibrated)
 {
     int ir1 = map(analogRead(IR1), 0, 1023, 0, 255);
     int ir2 = map(analogRead(IR2), 0, 1023, 0, 255);
@@ -422,7 +440,7 @@ DrawBot_IRArray DrawBot::ReadIRSensors(bool calibrated)
         ir5 = constrain(map(ir5, m_irLow[4], m_irHigh[4], 0, 255), 0, 255);
     }
 
-    DrawBot_IRArray result;
+    DB1_IRArray result;
     result.farLeft = ir5;
     result.left = ir3;
     result.centre = ir1;
@@ -431,16 +449,16 @@ DrawBot_IRArray DrawBot::ReadIRSensors(bool calibrated)
     return result;
 }
 
-int DrawBot::ReadToFSensor(DrawBot_ToFLocation location)
+int DB1::ReadToFSensor(DB1_ToFLocation location)
 {
     return m_tofs[location].readRangeContinuousMillimeters();
 }
 
-DrawBot_Motion DrawBot::ReadIMU()
+DB1_Motion DB1::ReadIMU()
 {
     BMX160_IMUReading reading = m_imu->ReadIMU();
 
-    DrawBot_Motion motion;
+    DB1_Motion motion;
     motion.accel.x = reading.accel.x;
     motion.accel.y = reading.accel.y;
     motion.accel.z = reading.accel.z;
@@ -454,12 +472,12 @@ DrawBot_Motion DrawBot::ReadIMU()
     return motion;
 }
 
-void DrawBot::EnableBumpInterrupt(uint8_t threshold, uint8_t duration, BMX160_InterruptPin pin)
+void DB1::EnableBumpInterrupt(uint8_t threshold, uint8_t duration, BMX160_InterruptPin pin)
 {
     m_imu->AddHighGInterrupt(pin, threshold, duration, BMX160_HIGH_HY_1, BMX160_XYZ_AXES);
 }
 
-void DrawBot::DisableBumpInterrupt()
+void DB1::DisableBumpInterrupt()
 {
     m_imu->RemoveInterrupt(BMX160_HIGH_G_INT);
 }
