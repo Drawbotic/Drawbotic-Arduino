@@ -29,9 +29,9 @@ struct DB1_Vector3
 
 struct DB1_Motion
 {
-    DrawBot_Vector3 accel;
-    DrawBot_Vector3 gyro;
-    DrawBot_Vector3 mag;
+    DB1_Vector3 accel;
+    DB1_Vector3 gyro;
+    DB1_Vector3 mag;
 };
 
 struct DB1_IRArray
@@ -159,6 +159,9 @@ private:
 
     int m_irHigh[IR_COUNT];
     int m_irLow[IR_COUNT];
+
+    int m_m1EnALastState;
+    int m_m2EnALastState;
 
     long m_m1En;
     long m_m2En;

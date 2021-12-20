@@ -22,14 +22,21 @@ void DB1::m1EncoderCallBack()
 {
     if(s_instance)
     {
-        if(digitalRead(M1_E_A) == digitalRead(M1_E_B))
+        int m1EnAState = digitalRead(M1_E_A);
+
+        if(m1EnAState != s_instance->m_m1EnALastState && m1EnAState == 1)
         {
-            s_instance->m_m1En++;
+            if(digitalRead(M1_E_B) != m1EnAState)
+            {
+                s_instance->m_m1En--;
+            }
+            else
+            {
+                s_instance->m_m1En++;
+            }
         }
-        else// if(digitalRead(M1_E_A) && digitalRead(M1_E_B))
-        {
-            s_instance->m_m1En--;
-        }
+        
+        s_instance->m_m1EnALastState = m1EnAState;
     }
 }
 
@@ -37,14 +44,21 @@ void DB1::m2EncoderCallBack()
 {
     if(s_instance)
     {
-        if(digitalRead(M2_E_A) == digitalRead(M2_E_B))
+        int m2EnAState = digitalRead(M2_E_A);
+
+        if(m2EnAState != s_instance->m_m2EnALastState && m2EnAState == 1)
         {
-            s_instance->m_m2En++;
+            if(digitalRead(M2_E_B) != m2EnAState)
+            {
+                s_instance->m_m2En--;
+            }
+            else
+            {
+                s_instance->m_m2En++;
+            }
         }
-        else// if(digitalRead(M2_E_A) && digitalRead(M2_E_B))
-        {
-            s_instance->m_m2En--;
-        }
+        
+        s_instance->m_m2EnALastState = m2EnAState;
     }
 }
 
@@ -239,15 +253,24 @@ void DB1::SetupMotors(bool encoders)
     pinMode(M2_DIRA, OUTPUT);
     pinMode(M2_DIRB, OUTPUT);
 
+    pinMode(M1_E_A, INPUT);
+    pinMode(M1_E_B, INPUT);
+    pinMode(M2_E_A, INPUT);
+    pinMode(M2_E_B, INPUT);
+
     if(encoders)
     {
         attachInterrupt(M1_E_A, m1EncoderCallBack, CHANGE);
+        attachInterrupt(M1_E_B, m1EncoderCallBack, CHANGE);
         attachInterrupt(M2_E_A, m2EncoderCallBack, CHANGE);
+        attachInterrupt(M2_E_B, m2EncoderCallBack, CHANGE);
     }
     else
     {
         detachInterrupt(M1_E_A);
+        detachInterrupt(M1_E_B);
         detachInterrupt(M2_E_A);
+        detachInterrupt(M2_E_B);
     }
     
     m_currentSettings.useEncoders = encoders;
@@ -271,7 +294,7 @@ void DB1::CalibrateIRArray()
     SetMotorSpeed(2, 0.1);
     for(int i = 0; i < IR_CALIBRATION_COUNT; i++)
     {
-        DrawBot_IRArray ir = ReadIRSensors(false);
+        DB1_IRArray ir = ReadIRSensors(false);
         if(ir.centre < m_irLow[0])
             m_irLow[0] = ir.centre;
         else if(ir.centre > m_irHigh[0])
