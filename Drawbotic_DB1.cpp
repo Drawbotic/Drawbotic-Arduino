@@ -386,9 +386,7 @@ void DB1::SetPenServo(double pos)
 
 void DB1::SetMotorSpeed(int motor, double speed)
 {
-    bool direction = false;
-    if(speed > 0)
-        direction = true;
+    bool direction = (speed > 0);
     double pwmVal = abs(speed) * 65535.0;
 
     if(motor == 1)
