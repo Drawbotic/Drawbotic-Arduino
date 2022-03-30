@@ -1,8 +1,8 @@
-#include <DrawBot.h>
+#include <Drawbotic_DB1.h>
 
 #define PEN_RATE_MS 2000
 
-DrawBot bot;
+DB1 bot;
 
 void bumpInt()
 {
@@ -19,7 +19,7 @@ void setup()
     
     bot.SetPenUp(false);
 
-    DrawBot_Lights whiteLights;
+    DB1_Lights whiteLights;
     for(int i = 0; i < LIGHT_COUNT; i++)
         whiteLights.colours[i] = {255, 255, 255};
     bot.SetLights(whiteLights);
@@ -48,7 +48,7 @@ void loop()
     Serial.print(currentMillis/1000.0);
     Serial.println("s");
 
-    DrawBot_IRArray irReading = bot.ReadIRSensors(false);
+    DB1_IRArray irReading = bot.ReadIRSensors(false);
     Serial.print("IR: ");
     Serial.print(irReading.farLeft); Serial.print("\t\t");
     Serial.print(irReading.left); Serial.print("\t");
@@ -61,7 +61,7 @@ void loop()
     Serial.print(bot.ReadToFSensor(TOF_CENTRE)); Serial.print("\t\t");
     Serial.println(bot.ReadToFSensor(TOF_RIGHT));
 
-    DrawBot_Motion imuReading = bot.ReadIMU();
+    DB1_Motion imuReading = bot.ReadIMU();
     Serial.print("IMU: ");
     Serial.print("AX: "); Serial.print(imuReading.accel.x);
     Serial.print("\tAY: "); Serial.print(imuReading.accel.y);
@@ -73,7 +73,7 @@ void loop()
     Serial.print("\tMY: "); Serial.print(imuReading.mag.y);
     Serial.print("\tMZ: "); Serial.println(imuReading.mag.z);
 
-    DrawBot_Colour cReading = bot.ReadColour();
+    DB1_Colour cReading = bot.ReadColour();
     Serial.println("Colour: ");
     Serial.print("R:\t"); Serial.print(cReading.red); 
     Serial.print("\tG:\t"); Serial.print(cReading.green); 

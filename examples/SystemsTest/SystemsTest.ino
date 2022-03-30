@@ -1,6 +1,6 @@
-#include <DrawBot.h>
+#include <Drawbotic_DB1.h>
 
-DrawBot bot;
+DB1 bot;
 
 void bumpInt()
 {
@@ -58,7 +58,7 @@ void Pen_Loop()
 
 void RGB_Loop()
 {
-    DrawBot_Lights newLights;
+    DB1_Lights newLights;
 
     //Set all lights to red
     for(int i = 0; i < LIGHT_COUNT; i++)
@@ -107,7 +107,7 @@ void Motors_Loop()
 {
     //Set motor speed
     bot.SetMotorSpeed(1, 0.1);
-    bot.SetMotorSpeed(2, -0.1);
+    bot.SetMotorSpeed(2, 0.1);
 
     //Print encoder values
     Serial.print("M1:\t"); Serial.print(bot.GetM1Encoder());
@@ -129,7 +129,7 @@ void ToF_Loop()
 void IRCali_Loop()
 {
     //Read calibrated values of IR sensors
-    DrawBot_IRArray reading = bot.ReadIRSensors();
+    DB1_IRArray reading = bot.ReadIRSensors();
 
     //Print each value
     Serial.print(reading.farLeft); Serial.print("\t\t");
@@ -144,7 +144,7 @@ void IRCali_Loop()
 void IRRaw_Loop()
 {
     //Read raw values of tIR sensors
-    DrawBot_IRArray reading = bot.ReadIRSensors(false);
+    DB1_IRArray reading = bot.ReadIRSensors(false);
 
     //Print each value
     Serial.print(reading.farLeft); Serial.print("\t\t");
@@ -159,7 +159,7 @@ void IRRaw_Loop()
 void Colour_Loop()
 {
     bot.SetWhiteLight(true);
-    DrawBot_Colour reading = bot.ReadColour();
+    DB1_Colour reading = bot.ReadColour();
 
     Serial.print("R:\t"); Serial.print(reading.red); 
     Serial.print("\tG:\t"); Serial.print(reading.green); 
@@ -170,7 +170,7 @@ void Colour_Loop()
 
 void IMU_Loop()
 {
-    DrawBot_Motion reading = bot.ReadIMU();
+    DB1_Motion reading = bot.ReadIMU();
 
     Serial.print("AX: "); Serial.print(reading.accel.x);
     Serial.print("\tAY: "); Serial.print(reading.accel.y);
