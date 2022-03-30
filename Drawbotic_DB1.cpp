@@ -50,11 +50,11 @@ void DB1::m2EncoderCallBack()
         {
             if(digitalRead(M2_E_B) != m2EnAState)
             {
-                s_instance->m_m2En--;
+                s_instance->m_m2En++;
             }
             else
             {
-                s_instance->m_m2En++;
+                s_instance->m_m2En--;
             }
         }
         

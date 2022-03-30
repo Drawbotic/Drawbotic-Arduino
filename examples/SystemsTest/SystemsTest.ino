@@ -107,7 +107,7 @@ void Motors_Loop()
 {
     //Set motor speed
     bot.SetMotorSpeed(1, 0.1);
-    bot.SetMotorSpeed(2, -0.1);
+    bot.SetMotorSpeed(2, 0.1);
 
     //Print encoder values
     Serial.print("M1:\t"); Serial.print(bot.GetM1Encoder());
