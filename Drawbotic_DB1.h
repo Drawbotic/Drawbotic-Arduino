@@ -32,15 +32,16 @@ struct DB1_Motion
     DB1_Vector3 accel;
     DB1_Vector3 gyro;
     DB1_Vector3 mag;
+    float heading;
 };
 
 struct DB1_IRArray
 {
-    uint8_t farLeft;
-    uint8_t left;
-    uint8_t centre;
-    uint8_t right;
-    uint8_t farRight;
+    int farLeft;
+    int left;
+    int centre;
+    int right;
+    int farRight;
 };
 
 struct DB1_IMUSettings
@@ -80,10 +81,9 @@ struct DB1_Settings
     DB1_ServoSettings servo;
     DB1_ToFSettings tof;
     bool useEncoders;
-    bool m1Flipped;
-    bool m2Flipped;
     bool whiteLightOn;
     int irDimLevel;
+    int irReadCount;
 };
 
 enum DB1_ToFLocation
@@ -141,6 +141,8 @@ public:
     DB1_Motion ReadIMU();
     void EnableBumpInterrupt(uint8_t threshold = 20, uint8_t duration = 10, BMX160_InterruptPin pin = BMX160_INT_PIN_1);
     void DisableBumpInterrupt();
+    void EnableIMUReadyInterrupt(BMX160_InterruptPin pin = BMX160_INT_PIN_1);
+    void DisableIMUReadyInterrupt();
 
     //Settings structure
     DB1_Settings GetCurrentSettings() { return m_currentSettings; }
@@ -157,8 +159,8 @@ private:
 
     DB1_Lights m_currentLights;
 
-    int m_irHigh[IR_COUNT];
-    int m_irLow[IR_COUNT];
+    DB1_IRArray m_irHigh;
+    DB1_IRArray m_irLow;
 
     int m_m1EnALastState;
     int m_m2EnALastState;

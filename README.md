@@ -20,7 +20,7 @@ DB1 bot;
 
 bot.Initialise();
 ```
-The various settings of the DB-1 are stored in an instance of the DB1_Setting struct which can be passed to the Initialise method. This struct is defined as the following:
+The various settings of the DB-1 are stored in an instance of the `DB1_Setting` struct which can be passed to the Initialise method. This struct is defined as the following:
 
 ``` c++
 struct DB1_Settings
@@ -30,8 +30,6 @@ struct DB1_Settings
     DB1_ServoSettings servo;
     DB1_ToFSettings tof;
     bool useEncoders;
-    bool m1Flipped;
-    bool m2Flipped;
     bool whiteLightOn;
     int irDimLevel;
 };
@@ -94,9 +92,7 @@ const DB1_Settings DB1::s_defaultSettings = {
       TOF_TIMING_BUDGET_DEFAULT, TOF_PRE_PCLKS_DEFAULT, 
       TOF_FIN_PCLKS_DEFAULT },                                  //ToF defaults
     true,                                                       //Use encoders
-    false,                                                      //m1 flipped
-    false,                                                      //m2 flipped
-    true,                                                       //White Light default
+    false,                                                      //White Light default
     0                                                           //IR Dim default
 };
 ```
@@ -115,7 +111,7 @@ To read the IMU:
 ``` c++
 DB1_Motion reading = bot.ReadIMU();
 ```
-The DB1_Motion struct is defined as follows: 
+The `DB1_Motion` struct is defined as follows: 
 ``` c++
 struct DB1_Vector3
 {
@@ -151,7 +147,7 @@ To read the Colour Sensor:
 ``` c++
 DB1_Colour reading = bot.ReadColour();
 ```
-The DB1_Colour struct is defined as follows:
+The `DB1_Colour` struct is defined as follows:
 ``` c++
 struct DB1_Colour
 {
@@ -166,7 +162,7 @@ To read the IR line sensors:
 DB1_IRArray reading = bot.ReadIRSensors();      //Will read sensors and apply calibration values
 DB1_IRArray reading = bot.ReadIRSensors(false); //Will read raw values without calibration
 ```
-The DB1_IRArray struct is defined as follows:
+The `DB1_IRArray` struct is defined as follows:
 ``` c++
 struct DB1_IRArray
 {
@@ -191,7 +187,7 @@ int readingLeft = bot.ReadToFSensor(TOF_LEFT);
 int readingCenter = bot.ReadToFSensor(TOF_CENTRE);
 int readingRight = bot.ReadToFSensor(TOF_RIGHT);
 ```
-Valid parameter values are defined by the DB1_ToFLocation enum:
+Valid parameter values are defined by the `DB1_ToFLocation` enum:
 ``` c++
 enum DB1_ToFLocation
 {
@@ -250,7 +246,7 @@ The battery level LEDs can be set by calling the following:
 ``` c++
 float percentage = bot.UpdateBatteryLevel();
 ```
-The UpdateBatteryLevel method also returns the current battery level percentage.
+The `UpdateBatteryLevel` method also returns the current battery level percentage.
 
 ---
 ### Running the Motors
@@ -270,10 +266,11 @@ The pen mechanism can be controlled as follows:
 bot.SetPenUp(true); //Raise pen holder
 bot.SetPenUp(false);//Lower pen holder
 
-bot.SetPenServo(90.0);
+bot.SetPenServo(0.5);
 ```
 The two positions that the servo moves to are defined in the servo settings struct.
-SetPenServo directly writes that value to the servo.
+
+`SetPenServo` takes a value between 0.0 and 1.0 where 0 is fully up and 1.0 is fully down
 
 ---
 ### Calibrating the IMU

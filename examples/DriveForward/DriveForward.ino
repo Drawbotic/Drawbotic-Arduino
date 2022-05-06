@@ -4,7 +4,7 @@ DB1 bot;
 
 double kp = 0.001;      //Determines the "strength" of the motor correction.
 double power = 0.2;     //The forward speed
-double followPower = 0;  //The modified power for the second motor
+double followPower = 0.2;  //The modified power for the second motor
 
 void setup()
 {

@@ -4,18 +4,17 @@
 DB1* DB1::s_instance = NULL;
 
 const DB1_Settings DB1::s_defaultSettings = {
-    { BMX160_ACCEL_RATE_1600HZ, BMX160_ACCEL_RANGE_2G, 
-      BMX160_GYRO_RATE_1600HZ, BMX160_GYRO_RANGE_1000_DPS },    //IMU Defaults
-    { TCS34725_GAIN_4X, TCS34725_INTEGRATIONTIME_24MS },        //Colour sensor defaults
-    { S_PWM, SERVO_UP_DEFAULT, SERVO_DOWN_DEFAULT },            //Servo defaults
+    { BMX160_ACCEL_RATE_25HZ, BMX160_ACCEL_RANGE_2G, 
+      BMX160_GYRO_RATE_25HZ, BMX160_GYRO_RANGE_250_DPS }, //IMU Defaults
+    { TCS34725_GAIN_4X, TCS34725_INTEGRATIONTIME_24MS },  //Colour sensor defaults
+    { S_PWM, SERVO_UP_DEFAULT, SERVO_DOWN_DEFAULT },      //Servo defaults
     { TOF_TIMEOUT_DEFAULT, TOF_SIGLIM_DEFAULT, 
       TOF_TIMING_BUDGET_DEFAULT, TOF_PRE_PCLKS_DEFAULT, 
-      TOF_FIN_PCLKS_DEFAULT },                                  //ToF defaults
-    true,                                                       //Use encoders
-    false,                                                      //m1 flipped
-    false,                                                      //m2 flipped
-    true,                                                       //White Light default
-    0                                                           //IR Dim default
+      TOF_FIN_PCLKS_DEFAULT },                            //ToF defaults
+    true,                                                 //Use encoders
+    false,                                                //White Light default
+    0,                                                    //IR Dim default
+    4,                                                    //IR Read Count
 };
 
 void DB1::m1EncoderCallBack()
@@ -72,13 +71,8 @@ DB1::DB1() :
         m_currentLights.colours[i].green = 0;
         m_currentLights.colours[i].blue = 0;
     }
-    
-    for(int i = 0; i < IR_COUNT; i++)
-    {
-        m_irHigh[i] = 0;
-        m_irLow[i] = 0;
-    }
-    
+    m_irHigh = {0};
+    m_irLow = {0};
     m_m1En = 0;
     m_m2En = 0;
     m_lastM1En = 0;
@@ -284,46 +278,59 @@ void DB1::CalibrateIMU()
 
 void DB1::CalibrateIRArray()
 {
-    for(int i = 0; i < IR_COUNT; i++)
-    {
-        m_irLow[i] = 1024;
-        m_irHigh[i] = 0;
-    }
+    m_irLow.centre = 1024;
+    m_irLow.left = 1024;
+    m_irLow.right = 1024;
+    m_irLow.farLeft = 1024;
+    m_irLow.farRight = 1024;
+
+    m_irHigh.centre = 0;
+    m_irHigh.left = 0;
+    m_irHigh.right = 0;
+    m_irHigh.farLeft = 0;
+    m_irHigh.farRight = 0;
 
     SetMotorSpeed(1, 0.1);
-    SetMotorSpeed(2, 0.1);
+    SetMotorSpeed(2, -0.1);
     for(int i = 0; i < IR_CALIBRATION_COUNT; i++)
     {
         DB1_IRArray ir = ReadIRSensors(false);
-        if(ir.centre < m_irLow[0])
-            m_irLow[0] = ir.centre;
-        else if(ir.centre > m_irHigh[0])
-            m_irHigh[0] = ir.centre;
+        if(ir.centre < m_irLow.centre)
+            m_irLow.centre = ir.centre;
+        else if(ir.centre > m_irHigh.centre)
+            m_irHigh.centre = ir.centre;
 
-        if(ir.left < m_irLow[1])
-            m_irLow[1] = ir.left;
-        else if(ir.left > m_irHigh[1])
-            m_irHigh[1] = ir.left;
+        if(ir.left < m_irLow.left)
+            m_irLow.left = ir.left;
+        else if(ir.left > m_irHigh.left)
+            m_irHigh.left = ir.left;
 
-        if(ir.right < m_irLow[2])
-            m_irLow[2] = ir.centre;
-        else if(ir.right > m_irHigh[2])
-            m_irHigh[2] = ir.right;
+        if(ir.right < m_irLow.right)
+            m_irLow.right = ir.right;
+        else if(ir.right > m_irHigh.right)
+            m_irHigh.right = ir.right;
 
-        if(ir.farLeft < m_irLow[3])
-            m_irLow[3] = ir.farLeft;
-        else if(ir.farLeft > m_irHigh[3])
-            m_irHigh[3] = ir.farLeft;
+        if(ir.farLeft < m_irLow.farLeft)
+            m_irLow.farLeft = ir.farLeft;
+        else if(ir.farLeft > m_irHigh.farLeft)
+            m_irHigh.farLeft = ir.farLeft;
 
-        if(ir.farRight < m_irLow[4])
-            m_irLow[4] = ir.farRight;
-        else if(ir.farRight > m_irHigh[4])
-            m_irHigh[4] = ir.farRight;
+        if(ir.farRight < m_irLow.farRight)
+            m_irLow.farRight = ir.farRight;
+        else if(ir.farRight > m_irHigh.farRight)
+            m_irHigh.farRight = ir.farRight;
 
         delay(IR_CALIBRATION_DELAY_MS);
     }
     SetMotorSpeed(1, 0.0);
     SetMotorSpeed(2, 0.0);
+
+    Serial.println("IR Calibration Complete:");
+    Serial.print("Far Left - Low: "); Serial.print(m_irLow.farLeft); Serial.print(" High: "); Serial.println(m_irHigh.farLeft);
+    Serial.print("Left - Low: "); Serial.print(m_irLow.left); Serial.print(" High: "); Serial.println(m_irHigh.left);
+    Serial.print("Centre - Low: "); Serial.print(m_irLow.centre); Serial.print(" High: "); Serial.println(m_irHigh.centre);
+    Serial.print("Right - Low: "); Serial.print(m_irLow.right); Serial.print(" High: "); Serial.println(m_irHigh.right);
+    Serial.print("Far Right - Low: "); Serial.print(m_irLow.farRight); Serial.print(" High: "); Serial.println(m_irHigh.farRight);
 }
 
 void DB1::SetLights(DB1_Lights lights)
@@ -446,27 +453,37 @@ DB1_Colour DB1::ReadColour()
 
 DB1_IRArray DB1::ReadIRSensors(bool calibrated)
 {
-    int ir1 = map(analogRead(IR1), 0, 1023, 0, 255);
-    int ir2 = map(analogRead(IR2), 0, 1023, 0, 255);
-    int ir3 = map(analogRead(IR3), 0, 1023, 0, 255);
-    int ir4 = map(analogRead(IR4), 0, 1023, 0, 255);
-    int ir5 = map(analogRead(IR5), 0, 1023, 0, 255);
+    DB1_IRArray result;// = {0};
+    int centre = 0;
+    int left = 0;
+    int right = 0;
+    int farLeft = 0;
+    int farRight = 0;
+
+    for(int i = 0; i < m_currentSettings.irReadCount; i++)
+    {
+        centre   += analogRead(IR1);
+        right    += analogRead(IR2);
+        left     += analogRead(IR3);
+        farRight += analogRead(IR4);
+        farLeft  += analogRead(IR5);
+    }
+
+    result.centre   = centre / m_currentSettings.irReadCount;
+    result.right    = right / m_currentSettings.irReadCount;
+    result.left     = left / m_currentSettings.irReadCount;
+    result.farRight = farRight / m_currentSettings.irReadCount;
+    result.farLeft  = farLeft / m_currentSettings.irReadCount;
 
     if(calibrated)
     {
-        ir1 = constrain(map(ir1, m_irLow[0], m_irHigh[0], 0, 255), 0, 255);
-        ir2 = constrain(map(ir2, m_irLow[1], m_irHigh[1], 0, 255), 0, 255);
-        ir3 = constrain(map(ir3, m_irLow[2], m_irHigh[2], 0, 255), 0, 255);
-        ir4 = constrain(map(ir4, m_irLow[3], m_irHigh[3], 0, 255), 0, 255);
-        ir5 = constrain(map(ir5, m_irLow[4], m_irHigh[4], 0, 255), 0, 255);
+        result.centre   = constrain(map(result.centre,   m_irLow.centre,   m_irHigh.centre,   0, 255), 0, 255);
+        result.right    = constrain(map(result.right,    m_irLow.right,    m_irHigh.right,    0, 255), 0, 255);
+        result.left     = constrain(map(result.left,     m_irLow.left,     m_irHigh.left,     0, 255), 0, 255);
+        result.farRight = constrain(map(result.farRight, m_irLow.farRight, m_irHigh.farRight, 0, 255), 0, 255);
+        result.farLeft  = constrain(map(result.farLeft,  m_irLow.farLeft,  m_irHigh.farLeft,  0, 255), 0, 255);
     }
 
-    DB1_IRArray result;
-    result.farLeft = ir5;
-    result.left = ir3;
-    result.centre = ir1;
-    result.right = ir2;
-    result.farRight = ir4;
     return result;
 }
 
@@ -489,6 +506,7 @@ DB1_Motion DB1::ReadIMU()
     motion.mag.x = reading.mag.x;
     motion.mag.y = reading.mag.y;
     motion.mag.z = reading.mag.z;
+    motion.heading = reading.heading;
 
     return motion;
 }
@@ -501,4 +519,14 @@ void DB1::EnableBumpInterrupt(uint8_t threshold, uint8_t duration, BMX160_Interr
 void DB1::DisableBumpInterrupt()
 {
     m_imu->RemoveInterrupt(BMX160_HIGH_G_INT);
+}
+
+void DB1::EnableIMUReadyInterrupt(BMX160_InterruptPin pin)
+{
+    m_imu->AddDataReadyInterrupt(pin);
+}
+
+void DB1::DisableIMUReadyInterrupt()
+{
+    m_imu->RemoveInterrupt(BMX160_DATAREADY_INT);
 }
