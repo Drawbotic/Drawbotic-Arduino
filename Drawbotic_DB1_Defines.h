@@ -23,4 +23,7 @@ const int TOF_EN_PINS[TOF_COUNT] = { TOF3_EN, TOF2_EN, TOF1_EN };
 #define TOF_PRE_PCLKS_DEFAULT       14
 #define TOF_FIN_PCLKS_DEFAULT       10
 
+#define BATT_VOLT_LOW               6.0f
+#define BATT_VOLT_HIGH              8.4f
+
 #endif

@@ -4,9 +4,9 @@
 #include <Wire.h>
 #include <Servo.h>
 #include <Adafruit_NeoPixel.h>
-#include <Adafruit_TCS34725.h>
+#include <Drawbotic_VEML6040.h>
 #include <VL53L0X.h>
-#include <BMX160.h>
+//#include <BMX160.h>
 
 #include "Drawbotic_DB1_Defines.h"
 
@@ -44,19 +44,13 @@ struct DB1_IRArray
     int farRight;
 };
 
-struct DB1_IMUSettings
+/*struct DB1_IMUSettings
 {
     BMX160_AccelRate accelRate;
     BMX160_AccelRange accelRange;
     BMX160_GyroRate gyroRate;
     BMX160_GyroRange gyroRange;
-};
-
-struct DB1_ColourSettings
-{
-    tcs34725Gain_t gain;
-    tcs34725IntegrationTime_t intergrationTime;
-};
+};*/
 
 struct DB1_ServoSettings
 {
@@ -76,13 +70,12 @@ struct DB1_ToFSettings
 
 struct DB1_Settings
 {
-    DB1_IMUSettings imu;
-    DB1_ColourSettings colourSensor;
+    //DB1_IMUSettings imu;
     DB1_ServoSettings servo;
     DB1_ToFSettings tof;
+    VEML6040_IntegrationTime colourIntTime;
     bool useEncoders;
     bool whiteLightOn;
-    int irDimLevel;
     int irReadCount;
 };
 
@@ -104,16 +97,15 @@ public:
     
     //Setting individual bot elements
     void SetWhiteLight(bool on);
-    void SetIRDimLevel(int level);
-    void SetupIMU(DB1_IMUSettings settings);
-    void SetupColourSensor(DB1_ColourSettings settings);
+    //void SetupIMU(DB1_IMUSettings settings);
+    void SetupColourSensor(VEML6040_IntegrationTime colourIntTime);
     void SetupServo(DB1_ServoSettings settings);
     void SetupToFSensor(int number, DB1_ToFSettings settings);
     void SetupMotors(bool useEncoders);
 
     //Sensor calibrations
     void CalibrateIRArray();
-    void CalibrateIMU();
+    //void CalibrateIMU();
     
     //RGB Lighting
     void SetLights(DB1_Lights lights);
@@ -135,14 +127,14 @@ public:
     long GetM2EncoderDelta();
 
     //Sensor access
-    DB1_Colour ReadColour();
+    VEML6040_Colour ReadColour();
     int ReadToFSensor(DB1_ToFLocation location);
     DB1_IRArray ReadIRSensors(bool calibrated = true);
-    DB1_Motion ReadIMU();
-    void EnableBumpInterrupt(uint8_t threshold = 20, uint8_t duration = 10, BMX160_InterruptPin pin = BMX160_INT_PIN_1);
-    void DisableBumpInterrupt();
-    void EnableIMUReadyInterrupt(BMX160_InterruptPin pin = BMX160_INT_PIN_1);
-    void DisableIMUReadyInterrupt();
+    //DB1_Motion ReadIMU();
+    //void EnableBumpInterrupt(uint8_t threshold = 20, uint8_t duration = 10, BMX160_InterruptPin pin = BMX160_INT_PIN_1);
+    //void DisableBumpInterrupt();
+    //void EnableIMUReadyInterrupt(BMX160_InterruptPin pin = BMX160_INT_PIN_1);
+    //void DisableIMUReadyInterrupt();
 
     //Settings structure
     DB1_Settings GetCurrentSettings() { return m_currentSettings; }
@@ -153,9 +145,9 @@ private:
 
     Servo m_penLift;
     Adafruit_NeoPixel m_lights;
-    Adafruit_TCS34725 m_colourTCS;
+    Drawbotic_VEML6040 m_colourSensor;
     VL53L0X m_tofs[TOF_COUNT];
-    BMX160* m_imu;
+    //BMX160* m_imu;
 
     DB1_Lights m_currentLights;
 
