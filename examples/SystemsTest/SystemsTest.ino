@@ -21,6 +21,7 @@ void setup()
     //bot.CalibrateIMU();
     
     //bot.CalibrateIRArray();   //Uncomment if you want the robot to calibrate the IR sensors. Robot will spin on spot for a few seconds!
+    //bot.CalibrateColourSensor();  //Uncomment to calibrate the colour sensor. Make sure the robot is on a white surface.
 }
 
 

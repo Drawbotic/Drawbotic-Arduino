@@ -294,6 +294,32 @@ void DB1::CalibrateIRArray()
     Serial.print("Far Right - Low: "); Serial.print(m_irLow.farRight); Serial.print(" High: "); Serial.println(m_irHigh.farRight);
 }
 
+void DB1::SetIRCalibration(DB1_IRArray low, DB1_IRArray high)
+{
+    m_irLow = low;
+    m_irHigh = high;
+}
+
+void DB1::CalibrateColourSensor()
+{
+    VEML6040_Colour result;
+
+    for(int i = 0; i < COLOUR_CALIBRATION_COUNT; i++)
+    {
+        VEML6040_Colour reading = m_colourSensor.getColour();
+        result.red += reading.red;
+        result.green += reading.green;
+        result.blue += reading.blue;
+        result.white += reading.white;
+
+        delay(COLOUR_CALIBRATION_DELAY_MS);
+    }
+    m_colourHigh.red = result.red / COLOUR_CALIBRATION_COUNT;
+    m_colourHigh.green = result.green / COLOUR_CALIBRATION_COUNT;
+    m_colourHigh.blue = result.blue / COLOUR_CALIBRATION_COUNT;
+    m_colourHigh.white = result.white / COLOUR_CALIBRATION_COUNT;
+}
+
 void DB1::SetLights(DB1_Lights lights)
 {
     m_lights.clear();
@@ -403,8 +429,18 @@ long DB1::GetM2EncoderDelta()
     return delta;
 }
 
-VEML6040_Colour DB1::ReadColour()
+VEML6040_Colour DB1::ReadColour(bool calibrated)
 {
+    if(calibrated)
+    {
+        VEML6040_Colour reading = m_colourSensor.getColour();
+        reading.red = mapf(reading.red, 0, m_colourHigh.red, 0, 255);
+        reading.green = mapf(reading.green, 0, m_colourHigh.green, 0, 255);
+        reading.blue = mapf(reading.blue, 0, m_colourHigh.blue, 0, 255);
+        reading.white = mapf(reading.white, 0, m_colourHigh.white, 0, 255);
+
+        return reading;
+    }
     return m_colourSensor.getColour();
 }
 

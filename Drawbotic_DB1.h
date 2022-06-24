@@ -105,6 +105,8 @@ public:
 
     //Sensor calibrations
     void CalibrateIRArray();
+    void SetIRCalibration(DB1_IRArray low, DB1_IRArray high);
+    void CalibrateColourSensor();
     //void CalibrateIMU();
     
     //RGB Lighting
@@ -127,7 +129,7 @@ public:
     long GetM2EncoderDelta();
 
     //Sensor access
-    VEML6040_Colour ReadColour();
+    VEML6040_Colour ReadColour(bool calibrated = true);
     int ReadToFSensor(DB1_ToFLocation location);
     DB1_IRArray ReadIRSensors(bool calibrated = true);
     //DB1_Motion ReadIMU();
@@ -153,6 +155,8 @@ private:
 
     DB1_IRArray m_irHigh;
     DB1_IRArray m_irLow;
+
+    VEML6040_Colour m_colourHigh;
 
     int m_m1EnALastState;
     int m_m2EnALastState;
