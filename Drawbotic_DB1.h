@@ -112,6 +112,8 @@ public:
     //RGB Lighting
     void SetLights(DB1_Lights lights);
     DB1_Lights GetCurrentLights() { return m_currentLights; }
+    void SetTopLight(DB1_Colour light);
+    DB1_Colour GetCurrentTopLight() { return m_currentTopLight; }
 
     //Battery Fuel Guage
     float UpdateBatteryLevel(bool lights = true);
@@ -147,11 +149,13 @@ private:
 
     Servo m_penLift;
     Adafruit_NeoPixel m_lights;
+    Adafruit_NeoPixel m_topLight;
     Drawbotic_VEML6040 m_colourSensor;
     VL53L0X m_tofs[TOF_COUNT];
     //BMX160* m_imu;
 
     DB1_Lights m_currentLights;
+    DB1_Colour m_currentTopLight;
 
     DB1_IRArray m_irHigh;
     DB1_IRArray m_irLow;

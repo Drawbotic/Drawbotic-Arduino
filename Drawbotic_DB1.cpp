@@ -62,7 +62,8 @@ void DB1::m2EncoderCallBack()
 
 //------- Public Methods -------//
 DB1::DB1() : 
-    m_lights(LIGHT_COUNT, RGB_DOUT, NEO_GRB + NEO_KHZ800)
+    m_lights(LIGHT_COUNT, RGB_DOUT, NEO_GRB + NEO_KHZ800),
+    m_topLight(1, STAT_DOUT, NEO_GRB + NEO_KHZ800)
 {
     for(int i = 0; i < LIGHT_COUNT; i++)
     {
@@ -70,6 +71,7 @@ DB1::DB1() :
         m_currentLights.colours[i].green = 0;
         m_currentLights.colours[i].blue = 0;
     }
+    m_currentTopLight = {0};
     m_irHigh = {0};
     m_irLow = {0};
     m_m1En = 0;
@@ -151,8 +153,13 @@ bool DB1::Initialise(DB1_Settings settings)
     m_lights.begin();
     SetLights(m_currentLights);
     m_lights.show();  
-    Serial.println("RGB Done");
+    
+    m_topLight.begin();
+    SetTopLight(m_currentTopLight);
+    m_topLight.show();
 
+    Serial.println("RGB Done");
+    
     return true;
 }
 
@@ -331,6 +338,13 @@ void DB1::SetLights(DB1_Lights lights)
     m_currentLights = lights;
 }
 
+void DB1::SetTopLight(DB1_Colour light)
+{
+    m_topLight.setPixelColor(0, m_currentTopLight.red, m_currentTopLight.green, m_currentTopLight.blue);
+    m_topLight.show();
+    m_currentTopLight = light;
+}
+
 float DB1::UpdateBatteryLevel(bool lights)
 {
     int battLevel = analogRead(V_DIV_BATT);
@@ -434,10 +448,10 @@ VEML6040_Colour DB1::ReadColour(bool calibrated)
     if(calibrated)
     {
         VEML6040_Colour reading = m_colourSensor.getColour();
-        reading.red = mapf(reading.red, 0, m_colourHigh.red, 0, 255);
-        reading.green = mapf(reading.green, 0, m_colourHigh.green, 0, 255);
-        reading.blue = mapf(reading.blue, 0, m_colourHigh.blue, 0, 255);
-        reading.white = mapf(reading.white, 0, m_colourHigh.white, 0, 255);
+        reading.red = constrain(mapf(reading.red, 0, m_colourHigh.red, 0, 255), 0, 255);
+        reading.green = constrain(mapf(reading.green, 0, m_colourHigh.green, 0, 255), 0, 255);
+        reading.blue = constrain(mapf(reading.blue, 0, m_colourHigh.blue, 0, 255), 0, 255);
+        reading.white = constrain(mapf(reading.white, 0, m_colourHigh.white, 0, 255), 0, 255);
 
         return reading;
     }
