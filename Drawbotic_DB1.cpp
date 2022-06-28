@@ -4,16 +4,15 @@
 DB1* DB1::s_instance = NULL;
 
 const DB1_Settings DB1::s_defaultSettings = {
-    { BMX160_ACCEL_RATE_25HZ, BMX160_ACCEL_RANGE_2G, 
-      BMX160_GYRO_RATE_25HZ, BMX160_GYRO_RANGE_250_DPS }, //IMU Defaults
-    { TCS34725_GAIN_4X, TCS34725_INTEGRATIONTIME_24MS },  //Colour sensor defaults
-    { S_PWM, SERVO_UP_DEFAULT, SERVO_DOWN_DEFAULT },      //Servo defaults
+    //{ BMX160_ACCEL_RATE_25HZ, BMX160_ACCEL_RANGE_2G, 
+    //  BMX160_GYRO_RATE_25HZ, BMX160_GYRO_RANGE_250_DPS }, //IMU Defaults
+    { SERVO_PWM, SERVO_UP_DEFAULT, SERVO_DOWN_DEFAULT },      //Servo defaults
     { TOF_TIMEOUT_DEFAULT, TOF_SIGLIM_DEFAULT, 
       TOF_TIMING_BUDGET_DEFAULT, TOF_PRE_PCLKS_DEFAULT, 
       TOF_FIN_PCLKS_DEFAULT },                            //ToF defaults
+    VEML6040_IT_40MS,                                     //Default colour sensor int time
     true,                                                 //Use encoders
     false,                                                //White Light default
-    0,                                                    //IR Dim default
     4,                                                    //IR Read Count
 };
 
@@ -63,7 +62,8 @@ void DB1::m2EncoderCallBack()
 
 //------- Public Methods -------//
 DB1::DB1() : 
-    m_lights(LIGHT_COUNT, RGB_DOUT, NEO_GRB + NEO_KHZ800)
+    m_lights(LIGHT_COUNT, RGB_DOUT, NEO_GRB + NEO_KHZ800),
+    m_topLight(1, STAT_DOUT, NEO_GRB + NEO_KHZ800)
 {
     for(int i = 0; i < LIGHT_COUNT; i++)
     {
@@ -71,6 +71,7 @@ DB1::DB1() :
         m_currentLights.colours[i].green = 0;
         m_currentLights.colours[i].blue = 0;
     }
+    m_currentTopLight = {0};
     m_irHigh = {0};
     m_irLow = {0};
     m_m1En = 0;
@@ -79,14 +80,14 @@ DB1::DB1() :
     m_lastM2En = 0;
 
     m_currentSettings = GetDefaultSettings();
-    m_imu = BMX160::GetInstance();
+    //m_imu = BMX160::GetInstance();
 
     s_instance = this;
 }
 
 bool DB1::Initialise()
 {
-    Initialise(DB1::GetDefaultSettings());
+    return Initialise(DB1::GetDefaultSettings());
 }
 
 bool DB1::Initialise(DB1_Settings settings)
@@ -98,18 +99,11 @@ bool DB1::Initialise(DB1_Settings settings)
     SetupMotors(settings.useEncoders);
     Serial.println("Motors Done");
     
-    //Setup IR LEDs
-    pinMode(IR_CTRL, OUTPUT);
-    digitalWrite(IR_CTRL, HIGH);
-    SetIRDimLevel(settings.irDimLevel);
-    m_currentSettings.irDimLevel = settings.irDimLevel;
-    Serial.println("IR Done");
-    
-    pinMode(IR1, INPUT);
-    pinMode(IR2, INPUT);
-    pinMode(IR3, INPUT);
-    pinMode(IR4, INPUT);
-    pinMode(IR5, INPUT);
+    pinMode(LINE1, INPUT);
+    pinMode(LINE2, INPUT);
+    pinMode(LINE3, INPUT);
+    pinMode(LINE4, INPUT);
+    pinMode(LINE5, INPUT);
     
     pinMode(BATT_LVL1, OUTPUT);
     pinMode(BATT_LVL2, OUTPUT);
@@ -125,11 +119,6 @@ bool DB1::Initialise(DB1_Settings settings)
     //Setup servo
     m_penLift.attach(settings.servo.pin);
     Serial.println("Servo Done");
-    
-    //Turn off TCS
-    pinMode(TCS_EN, OUTPUT);
-    digitalWrite(TCS_EN, LOW);
-    Serial.println("Turn off colour");
     
     //Turn off ToFs
     for(int i = 0; i < TOF_COUNT; i++)
@@ -154,21 +143,24 @@ bool DB1::Initialise(DB1_Settings settings)
     }
     Serial.println("Tofs Done");
    
-    //Setup colour sensor
-    digitalWrite(TCS_EN, HIGH);
-    delay(TCS_BOOT_DELAY_MS);
-    SetupColourSensor(settings.colourSensor);
-    Serial.println("Colour Done");
+    SetupColourSensor(settings.colourIntTime);
    
     //Setup IMU
-    SetupIMU(settings.imu);
-    Serial.println("IMU Done");
+    //SetupIMU(settings.imu);
+    //Serial.println("IMU Done");
    
     //Setup neopixels
     m_lights.begin();
     SetLights(m_currentLights);
     m_lights.show();  
+    
+    m_topLight.begin();
+    SetTopLight(m_currentTopLight);
+    m_topLight.show();
+
     Serial.println("RGB Done");
+    
+    return true;
 }
 
 void DB1::SetWhiteLight(bool on)
@@ -177,29 +169,7 @@ void DB1::SetWhiteLight(bool on)
     digitalWrite(LED_EN, on);
 }
 
-void DB1::SetIRDimLevel(int level)
-{
-    //Reset both LED drivers
-    digitalWrite(IR_CTRL, LOW);
-    delay(10);
-
-    if(level > 32)
-        level = 32;
-    else if(level < 0)
-        level = 0;
-
-    //Count to the right pulses
-    for(int i = 0; i <= level; i++)
-    {
-        digitalWrite(IR_CTRL, LOW);
-        delayMicroseconds(10);
-        digitalWrite(IR_CTRL, HIGH);
-        delayMicroseconds(10);
-    }
-    m_currentSettings.irDimLevel = level;
-}
-
-void DB1::SetupIMU(DB1_IMUSettings settings)
+/*void DB1::SetupIMU(DB1_IMUSettings settings)
 {
     m_imu->Init(true);
     m_imu->SetAccelRange(settings.accelRange);
@@ -208,15 +178,13 @@ void DB1::SetupIMU(DB1_IMUSettings settings)
     m_imu->SetGyroRate(settings.gyroRate);
 
     m_currentSettings.imu = settings;
-}
+}*/
 
-void DB1::SetupColourSensor(DB1_ColourSettings settings)
+void DB1::SetupColourSensor(VEML6040_IntegrationTime colourIntTime)
 {
-    m_colourTCS.begin();
-    m_colourTCS.setGain(settings.gain);
-    m_colourTCS.setIntegrationTime(settings.intergrationTime);
-
-    m_currentSettings.colourSensor = settings;
+    m_colourSensor.begin();
+    m_colourSensor.setConfig(colourIntTime);
+    m_currentSettings.colourIntTime = colourIntTime;
 }
 
 void DB1::SetupServo(DB1_ServoSettings settings)
@@ -242,10 +210,10 @@ void DB1::SetupToFSensor(int index, DB1_ToFSettings settings)
 
 void DB1::SetupMotors(bool encoders)
 {
-    pinMode(M1_DIRA, OUTPUT);
-    pinMode(M1_DIRB, OUTPUT);
-    pinMode(M2_DIRA, OUTPUT);
-    pinMode(M2_DIRB, OUTPUT);
+    pinMode(M1_DIR_A, OUTPUT);
+    pinMode(M1_DIR_B, OUTPUT);
+    pinMode(M2_DIR_A, OUTPUT);
+    pinMode(M2_DIR_B, OUTPUT);
 
     pinMode(M1_E_A, INPUT);
     pinMode(M1_E_B, INPUT);
@@ -271,10 +239,10 @@ void DB1::SetupMotors(bool encoders)
 }
 
 
-void DB1::CalibrateIMU()
+/*void DB1::CalibrateIMU()
 {
     m_imu->BeginFOC(0, 0, 1);
-}
+}*/
 
 void DB1::CalibrateIRArray()
 {
@@ -333,6 +301,32 @@ void DB1::CalibrateIRArray()
     Serial.print("Far Right - Low: "); Serial.print(m_irLow.farRight); Serial.print(" High: "); Serial.println(m_irHigh.farRight);
 }
 
+void DB1::SetIRCalibration(DB1_IRArray low, DB1_IRArray high)
+{
+    m_irLow = low;
+    m_irHigh = high;
+}
+
+void DB1::CalibrateColourSensor()
+{
+    VEML6040_Colour result;
+
+    for(int i = 0; i < COLOUR_CALIBRATION_COUNT; i++)
+    {
+        VEML6040_Colour reading = m_colourSensor.getColour();
+        result.red += reading.red;
+        result.green += reading.green;
+        result.blue += reading.blue;
+        result.white += reading.white;
+
+        delay(COLOUR_CALIBRATION_DELAY_MS);
+    }
+    m_colourHigh.red = result.red / COLOUR_CALIBRATION_COUNT;
+    m_colourHigh.green = result.green / COLOUR_CALIBRATION_COUNT;
+    m_colourHigh.blue = result.blue / COLOUR_CALIBRATION_COUNT;
+    m_colourHigh.white = result.white / COLOUR_CALIBRATION_COUNT;
+}
+
 void DB1::SetLights(DB1_Lights lights)
 {
     m_lights.clear();
@@ -344,6 +338,13 @@ void DB1::SetLights(DB1_Lights lights)
     m_currentLights = lights;
 }
 
+void DB1::SetTopLight(DB1_Colour light)
+{
+    m_topLight.setPixelColor(0, m_currentTopLight.red, m_currentTopLight.green, m_currentTopLight.blue);
+    m_topLight.show();
+    m_currentTopLight = light;
+}
+
 float DB1::UpdateBatteryLevel(bool lights)
 {
     int battLevel = analogRead(V_DIV_BATT);
@@ -352,7 +353,7 @@ float DB1::UpdateBatteryLevel(bool lights)
     voltage /= 1024.0f;
     voltage *= 8.4;
     
-    float percentage = mapf(voltage, 3, 8.4, 0, 100);
+    float percentage = mapf(voltage, BATT_VOLT_LOW, BATT_VOLT_HIGH, 0, 100);
     
     digitalWrite(BATT_LVL1, LOW);
     digitalWrite(BATT_LVL2, LOW);
@@ -400,13 +401,13 @@ void DB1::SetMotorSpeed(int motor, double speed)
     {
         if(direction)
         {
-            digitalWrite(M1_DIRA, HIGH);
-            digitalWrite(M1_DIRB, LOW);
+            digitalWrite(M1_DIR_A, HIGH);
+            digitalWrite(M1_DIR_B, LOW);
         }
         else
         {
-            digitalWrite(M1_DIRA, LOW);
-            digitalWrite(M1_DIRB, HIGH);
+            digitalWrite(M1_DIR_A, LOW);
+            digitalWrite(M1_DIR_B, HIGH);
         }
         analogWrite(M1_PWM, (int)pwmVal);
     }
@@ -414,13 +415,13 @@ void DB1::SetMotorSpeed(int motor, double speed)
     {
         if(direction)
         {
-            digitalWrite(M2_DIRA, LOW);
-            digitalWrite(M2_DIRB, HIGH);
+            digitalWrite(M2_DIR_A, LOW);
+            digitalWrite(M2_DIR_B, HIGH);
         }
         else
         {
-            digitalWrite(M2_DIRA, HIGH);
-            digitalWrite(M2_DIRB, LOW);
+            digitalWrite(M2_DIR_A, HIGH);
+            digitalWrite(M2_DIR_B, LOW);
         }
         analogWrite(M2_PWM, (int)pwmVal);
     }
@@ -442,13 +443,19 @@ long DB1::GetM2EncoderDelta()
     return delta;
 }
 
-DB1_Colour DB1::ReadColour()
+VEML6040_Colour DB1::ReadColour(bool calibrated)
 {
-    float r, g, b;
-    m_colourTCS.getRGB(&r, &g, &b);
+    if(calibrated)
+    {
+        VEML6040_Colour reading = m_colourSensor.getColour();
+        reading.red = constrain(mapf(reading.red, 0, m_colourHigh.red, 0, 255), 0, 255);
+        reading.green = constrain(mapf(reading.green, 0, m_colourHigh.green, 0, 255), 0, 255);
+        reading.blue = constrain(mapf(reading.blue, 0, m_colourHigh.blue, 0, 255), 0, 255);
+        reading.white = constrain(mapf(reading.white, 0, m_colourHigh.white, 0, 255), 0, 255);
 
-    DB1_Colour colour = { (uint8_t)r, (uint8_t)g, (uint8_t)b };
-    return colour;
+        return reading;
+    }
+    return m_colourSensor.getColour();
 }
 
 DB1_IRArray DB1::ReadIRSensors(bool calibrated)
@@ -462,11 +469,11 @@ DB1_IRArray DB1::ReadIRSensors(bool calibrated)
 
     for(int i = 0; i < m_currentSettings.irReadCount; i++)
     {
-        centre   += analogRead(IR1);
-        right    += analogRead(IR2);
-        left     += analogRead(IR3);
-        farRight += analogRead(IR4);
-        farLeft  += analogRead(IR5);
+        centre   += analogRead(LINE1);
+        right    += analogRead(LINE2);
+        left     += analogRead(LINE3);
+        farRight += analogRead(LINE4);
+        farLeft  += analogRead(LINE5);
     }
 
     result.centre   = centre / m_currentSettings.irReadCount;
@@ -492,7 +499,7 @@ int DB1::ReadToFSensor(DB1_ToFLocation location)
     return m_tofs[location].readRangeContinuousMillimeters();
 }
 
-DB1_Motion DB1::ReadIMU()
+/*DB1_Motion DB1::ReadIMU()
 {
     BMX160_IMUReading reading = m_imu->ReadIMU();
 
@@ -509,9 +516,9 @@ DB1_Motion DB1::ReadIMU()
     motion.heading = reading.heading;
 
     return motion;
-}
+}*/
 
-void DB1::EnableBumpInterrupt(uint8_t threshold, uint8_t duration, BMX160_InterruptPin pin)
+/*void DB1::EnableBumpInterrupt(uint8_t threshold, uint8_t duration, BMX160_InterruptPin pin)
 {
     m_imu->AddHighGInterrupt(pin, threshold, duration, BMX160_HIGH_HY_1, BMX160_XYZ_AXES);
 }
@@ -529,4 +536,4 @@ void DB1::EnableIMUReadyInterrupt(BMX160_InterruptPin pin)
 void DB1::DisableIMUReadyInterrupt()
 {
     m_imu->RemoveInterrupt(BMX160_DATAREADY_INT);
-}
+}*/

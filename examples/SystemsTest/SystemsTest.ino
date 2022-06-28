@@ -13,15 +13,15 @@ void setup()
     bot.Initialise();
     
     bot.SetWhiteLight(false);
-    bot.SetIRDimLevel(0);   //0 is the highest
 
-    bot.EnableBumpInterrupt();
-    attachInterrupt(BMX_INT_1, bumpInt, RISING);
+    //bot.EnableBumpInterrupt();
+    //attachInterrupt(BMX_INT_1, bumpInt, RISING);
     
     bot.SetPenUp(false);
-    bot.CalibrateIMU();
+    //bot.CalibrateIMU();
     
     //bot.CalibrateIRArray();   //Uncomment if you want the robot to calibrate the IR sensors. Robot will spin on spot for a few seconds!
+    //bot.CalibrateColourSensor();  //Uncomment to calibrate the colour sensor. Make sure the robot is on a white surface.
 }
 
 
@@ -159,16 +159,18 @@ void IRRaw_Loop()
 void Colour_Loop()
 {
     bot.SetWhiteLight(true);
-    DB1_Colour reading = bot.ReadColour();
+    VEML6040_Colour reading = bot.ReadColour(true);
 
     Serial.print("R:\t"); Serial.print(reading.red); 
     Serial.print("\tG:\t"); Serial.print(reading.green); 
     Serial.print("\tB:\t"); Serial.println(reading.blue);
 
+    DB1_Colour lightColour = { (uint8_t)reading.red, (uint8_t)reading.green, (uint8_t)reading.blue };
+    bot.SetTopLight(lightColour);
     delay(50);
 }
 
-void IMU_Loop()
+/*void IMU_Loop()
 {
     DB1_Motion reading = bot.ReadIMU();
 
@@ -183,7 +185,7 @@ void IMU_Loop()
     Serial.print("\tMZ: "); Serial.println(reading.mag.z);
 
     delay(50);
-}
+}*/
 
 void I2C_Loop()
 {
