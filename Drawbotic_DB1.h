@@ -160,6 +160,7 @@ private:
     DB1_IRArray m_irHigh;
     DB1_IRArray m_irLow;
 
+    VEML6040_Colour m_colourLow;
     VEML6040_Colour m_colourHigh;
 
     int m_m1EnALastState;

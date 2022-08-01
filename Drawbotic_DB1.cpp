@@ -110,6 +110,11 @@ bool DB1::Initialise(DB1_Settings settings)
     pinMode(BATT_LVL3, OUTPUT);
     pinMode(BATT_LVL4, OUTPUT);
     
+    digitalWrite(BATT_LVL1, LOW);
+    digitalWrite(BATT_LVL2, LOW);
+    digitalWrite(BATT_LVL3, LOW);
+    digitalWrite(BATT_LVL4, LOW);
+
     //Setup white LED
     pinMode(LED_EN, OUTPUT);
     SetWhiteLight(settings.whiteLightOn);
@@ -309,8 +314,9 @@ void DB1::SetIRCalibration(DB1_IRArray low, DB1_IRArray high)
 
 void DB1::CalibrateColourSensor()
 {
+    bool currentLightSetting = m_currentSettings.whiteLightOn;
     VEML6040_Colour result;
-
+    SetWhiteLight(true);
     for(int i = 0; i < COLOUR_CALIBRATION_COUNT; i++)
     {
         VEML6040_Colour reading = m_colourSensor.getColour();
@@ -325,6 +331,25 @@ void DB1::CalibrateColourSensor()
     m_colourHigh.green = result.green / COLOUR_CALIBRATION_COUNT;
     m_colourHigh.blue = result.blue / COLOUR_CALIBRATION_COUNT;
     m_colourHigh.white = result.white / COLOUR_CALIBRATION_COUNT;
+
+    SetWhiteLight(false);
+    result = { 0 };
+    for(int i = 0; i < COLOUR_CALIBRATION_COUNT; i++)
+    {
+        VEML6040_Colour reading = m_colourSensor.getColour();
+        result.red += reading.red;
+        result.green += reading.green;
+        result.blue += reading.blue;
+        result.white += reading.white;
+
+        delay(COLOUR_CALIBRATION_DELAY_MS);
+    }
+    m_colourLow.red = result.red / COLOUR_CALIBRATION_COUNT;
+    m_colourLow.green = result.green / COLOUR_CALIBRATION_COUNT;
+    m_colourLow.blue = result.blue / COLOUR_CALIBRATION_COUNT;
+    m_colourLow.white = result.white / COLOUR_CALIBRATION_COUNT;
+
+    SetWhiteLight(currentLightSetting);
 }
 
 void DB1::SetLights(DB1_Lights lights)
@@ -340,9 +365,10 @@ void DB1::SetLights(DB1_Lights lights)
 
 void DB1::SetTopLight(DB1_Colour light)
 {
+    m_currentTopLight = light;
+    m_topLight.clear();
     m_topLight.setPixelColor(0, m_currentTopLight.red, m_currentTopLight.green, m_currentTopLight.blue);
     m_topLight.show();
-    m_currentTopLight = light;
 }
 
 float DB1::UpdateBatteryLevel(bool lights)
