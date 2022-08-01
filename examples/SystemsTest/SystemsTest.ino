@@ -2,25 +2,16 @@
 
 DB1 bot;
 
-void bumpInt()
-{
-    Serial.println("Bump!");
-}
-
 void setup()
 {
     Serial.begin(9600);
     bot.Initialise();
     
     bot.SetWhiteLight(false);
-
-    //bot.EnableBumpInterrupt();
-    //attachInterrupt(BMX_INT_1, bumpInt, RISING);
     
     bot.SetPenUp(false);
-    //bot.CalibrateIMU();
     
-    //bot.CalibrateIRArray();   //Uncomment if you want the robot to calibrate the IR sensors. Robot will spin on spot for a few seconds!
+    //bot.CalibrateIRArray();       //Uncomment if you want the robot to calibrate the IR sensors. Robot will spin on spot for a few seconds!
     //bot.CalibrateColourSensor();  //Uncomment to calibrate the colour sensor. Make sure the robot is on a white surface.
 }
 
@@ -30,7 +21,6 @@ void loop()
     //Uncomment each method to test different functionality
 
     //I2C_Loop();
-    //IMU_Loop();
     //Colour_Loop();
     //IRCali_Loop();
     //IRRaw_Loop();
@@ -107,7 +97,7 @@ void Motors_Loop()
 {
     //Set motor speed
     bot.SetMotorSpeed(1, 0.1);
-    bot.SetMotorSpeed(2, 0.1);
+    bot.SetMotorSpeed(2, -0.1);
 
     //Print encoder values
     Serial.print("M1:\t"); Serial.print(bot.GetM1Encoder());
@@ -169,23 +159,6 @@ void Colour_Loop()
     bot.SetTopLight(lightColour);
     delay(50);
 }
-
-/*void IMU_Loop()
-{
-    DB1_Motion reading = bot.ReadIMU();
-
-    Serial.print("AX: "); Serial.print(reading.accel.x);
-    Serial.print("\tAY: "); Serial.print(reading.accel.y);
-    Serial.print("\tAZ: "); Serial.print(reading.accel.z);
-    Serial.print("\tGX: "); Serial.print(reading.gyro.x);
-    Serial.print("\tGY: "); Serial.print(reading.gyro.y);
-    Serial.print("\tGZ: "); Serial.print(reading.gyro.z);
-    Serial.print("\tMX: "); Serial.print(reading.mag.x);
-    Serial.print("\tMY: "); Serial.print(reading.mag.y);
-    Serial.print("\tMZ: "); Serial.println(reading.mag.z);
-
-    delay(50);
-}*/
 
 void I2C_Loop()
 {

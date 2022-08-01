@@ -5,8 +5,8 @@
 DB1 bot;
 
 double kp = 0.001;      //Determines the "strength" of the motor correction.
-double power = 0.5;     //The forward speed
-double followPower = 0.5;  //The modified power for the second motor
+double power = 0.2;     //The forward speed
+double followPower = 0.2;  //The modified power for the second motor
 
 void setup()
 {
@@ -30,23 +30,23 @@ void loop()
         if(tofRight >  tofLeft) //If there is more space to the right...
         {
             //...turn right
-            OnSpotTurn(-0.9);
+            OnSpotTurn(0.2);
         }
         else if(tofLeft > tofRight) //If there is more space to the left...
         {
             //...turn left
-            OnSpotTurn(0.9);
+            OnSpotTurn(-0.2);
         }
         else
         {
             //Turn a random direction
             if(random(0,2) == 1)
             {
-                OnSpotTurn(-0.9);
+                OnSpotTurn(0.2);
             }
             else
             {
-                OnSpotTurn(0.9);
+                OnSpotTurn(-0.2);
             }
         }
         //Keep turning until clear
@@ -55,14 +55,14 @@ void loop()
     else if(tofLeft < TOF_TH) //If the left ToF is triggered
     {
         //Turn right
-        OnSpotTurn(-0.9);
+        OnSpotTurn(-0.2);
         //Keep turning until clear
         while(bot.ReadToFSensor(TOF_LEFT) < TOF_TH){}
     }
     else if(tofRight < TOF_TH)  //If the right ToF is triggered
     {
         //Turn left
-        OnSpotTurn(0.9);
+        OnSpotTurn(0.2);
         //Keep turning until clear
         while(bot.ReadToFSensor(TOF_RIGHT) < TOF_TH){}
     }
@@ -80,6 +80,7 @@ void loop()
     bot.UpdateBatteryLevel();   //Update the battery level
 }
 
+//Power is a number between -1 and 1 determining the speed of the turn. Positive values are right turns, negative are left
 void OnSpotTurn(double power)
 {
     Turn(power, 1.0);
@@ -88,5 +89,5 @@ void OnSpotTurn(double power)
 void Turn(double power, double turnAmount)
 {
     bot.SetMotorSpeed(1, power);
-    bot.SetMotorSpeed(2, power * turnAmount);
+    bot.SetMotorSpeed(2, -power * turnAmount);
 }

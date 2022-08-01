@@ -4,18 +4,12 @@
 
 DB1 bot;
 
-void bumpInt()
-{
-    Serial.println("Bump!");
-}
-
 void setup()
 {
     Serial.begin(9600);
     bot.Initialise();
     
     bot.SetWhiteLight(true);
-    bot.SetIRDimLevel(0);   //0 is the highest
     
     bot.SetPenUp(false);
 
@@ -25,7 +19,7 @@ void setup()
     bot.SetLights(whiteLights);
 
     bot.SetMotorSpeed(1, 0.5);
-    bot.SetMotorSpeed(2, 0.5);
+    bot.SetMotorSpeed(2, -0.5);
 }
 
 int penTimebankMS = 0;
@@ -61,7 +55,7 @@ void loop()
     Serial.print(bot.ReadToFSensor(TOF_CENTRE)); Serial.print("\t\t");
     Serial.println(bot.ReadToFSensor(TOF_RIGHT));
 
-    DB1_Motion imuReading = bot.ReadIMU();
+    /*DB1_Motion imuReading = bot.ReadIMU();
     Serial.print("IMU: ");
     Serial.print("AX: "); Serial.print(imuReading.accel.x);
     Serial.print("\tAY: "); Serial.print(imuReading.accel.y);
@@ -71,9 +65,9 @@ void loop()
     Serial.print("\tGZ: "); Serial.print(imuReading.gyro.z);
     Serial.print("\tMX: "); Serial.print(imuReading.mag.x);
     Serial.print("\tMY: "); Serial.print(imuReading.mag.y);
-    Serial.print("\tMZ: "); Serial.println(imuReading.mag.z);
+    Serial.print("\tMZ: "); Serial.println(imuReading.mag.z);*/
 
-    DB1_Colour cReading = bot.ReadColour();
+    VEML6040_Colour cReading = bot.ReadColour();
     Serial.println("Colour: ");
     Serial.print("R:\t"); Serial.print(cReading.red); 
     Serial.print("\tG:\t"); Serial.print(cReading.green); 

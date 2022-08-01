@@ -13,7 +13,7 @@ void setup()
     
     bot.SetWhiteLight(false);
     
-    bot.SetPenUp(false);
+    bot.SetPenUp(true);
 }
 
 
@@ -25,8 +25,10 @@ void loop()
     //Calculate the second motor power based on the error value and the correction "strength" factor
     followPower += (error * kp);
 
+    //The first motor is set to the target speed. The second is set to the corrected follow speed
     bot.SetMotorSpeed(1, power);
-    bot.SetMotorSpeed(2, followPower);  //Negate the speed to deal with mirrored motors
+    bot.SetMotorSpeed(2, followPower);
 
+    //Update the battery lights on the DB-1
     bot.UpdateBatteryLevel();
 }
