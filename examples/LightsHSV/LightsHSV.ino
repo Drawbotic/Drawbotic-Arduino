@@ -12,8 +12,7 @@ double hue = 0;
 void setup() 
 {
     Serial.begin(9600);
-    bot.Initialise();
-    bot.SetWhiteLight(false);
+    bot.init();
 }
 
 void loop() 
@@ -35,7 +34,7 @@ void loop()
     DB1_Lights newLights;
     for(int i = 0; i < LIGHT_COUNT; i++)
         newLights.colours[i] = { (int)(255 * lightColour.r), (int)(255 * lightColour.g), (int)(255 * lightColour.b) };
-    bot.SetLights(newLights);
+    bot.setLights(newLights);
 
-    bot.UpdateBatteryLevel();
+    bot.updateBatteryLevel();
 }

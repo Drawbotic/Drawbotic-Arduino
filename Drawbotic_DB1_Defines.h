@@ -17,6 +17,9 @@ const int TOF_EN_PINS[TOF_COUNT] = { TOF3_EN, TOF2_EN, TOF1_EN };
 #define COLOUR_CALIBRATION_COUNT    5
 #define COLOUR_CALIBRATION_DELAY_MS 500
 
+#define IMU_ORIENT_MS_DEFAULT  5
+#define IMU_ACCEL_MS_DEFAULT   5
+
 #define SERVO_UP_DEFAULT    25
 #define SERVO_DOWN_DEFAULT  90
 
@@ -25,6 +28,8 @@ const int TOF_EN_PINS[TOF_COUNT] = { TOF3_EN, TOF2_EN, TOF1_EN };
 #define TOF_TIMING_BUDGET_DEFAULT   33000
 #define TOF_PRE_PCLKS_DEFAULT       14
 #define TOF_FIN_PCLKS_DEFAULT       10
+
+#define IR_READ_COUNT_DEFAULT       4
 
 #define BATT_VOLT_LOW               6.0f
 #define BATT_VOLT_HIGH              8.4f

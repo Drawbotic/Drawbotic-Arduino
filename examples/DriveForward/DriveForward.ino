@@ -9,26 +9,22 @@ double followPower = 0.2;  //The modified power for the second motor
 void setup()
 {
     Serial.begin(9600);
-    bot.Initialise();
-    
-    bot.SetWhiteLight(false);
-    
-    bot.SetPenUp(true);
+    bot.init();
 }
 
 
 void loop()
 {
     //Find the difference between the two encoders since last read
-    double error = bot.GetM1EncoderDelta() - bot.GetM2EncoderDelta();
+    double error = bot.getM1EncoderDelta() - bot.getM2EncoderDelta();
 
     //Calculate the second motor power based on the error value and the correction "strength" factor
     followPower += (error * kp);
 
     //The first motor is set to the target speed. The second is set to the corrected follow speed
-    bot.SetMotorSpeed(1, power);
-    bot.SetMotorSpeed(2, followPower);
+    bot.setMotorSpeed(1, power);
+    bot.setMotorSpeed(2, followPower);
 
     //Update the battery lights on the DB-1
-    bot.UpdateBatteryLevel();
+    bot.updateBatteryLevel();
 }

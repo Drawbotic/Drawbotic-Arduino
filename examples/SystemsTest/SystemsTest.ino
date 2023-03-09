@@ -5,14 +5,10 @@ DB1 bot;
 void setup()
 {
     Serial.begin(9600);
-    bot.Initialise();
+    bot.init();
     
-    bot.SetWhiteLight(false);
-    
-    bot.SetPenUp(false);
-    
-    //bot.CalibrateIRArray();       //Uncomment if you want the robot to calibrate the IR sensors. Robot will spin on spot for a few seconds!
-    //bot.CalibrateColourSensor();  //Uncomment to calibrate the colour sensor. Make sure the robot is on a white surface.
+    //bot.calibrateIRArray();       //Uncomment if you want the robot to calibrate the IR sensors. Robot will spin on spot for a few seconds!
+    //bot.calibrateColourSensor();  //Uncomment to calibrate the colour sensor. Make sure the robot is on a white surface.
 }
 
 
@@ -33,16 +29,16 @@ void loop()
 
 void Battery_Loop()
 {
-    Serial.println(bot.UpdateBatteryLevel());
+    Serial.println(bot.updateBatteryLevel());
 
     delay(1000);
 }
 
 void Pen_Loop()
 {
-    bot.SetPenUp(true);
+    bot.setPen(true);
     delay(2000);
-    bot.SetPenUp(false);
+    bot.setPen(false);
     delay(2000);
 }
 
@@ -54,54 +50,54 @@ void RGB_Loop()
     for(int i = 0; i < LIGHT_COUNT; i++)
         newLights.colours[i] = {255, 0, 0};
     
-    bot.SetLights(newLights);
+    bot.setLights(newLights);
     delay(500);
 
     //Set all lights to yellow
     for(int i = 0; i < LIGHT_COUNT; i++)
         newLights.colours[i] = {255, 255, 0};
     
-    bot.SetLights(newLights);
+    bot.setLights(newLights);
     delay(500);
 
     //Set all lights to green
     for(int i = 0; i < LIGHT_COUNT; i++)
         newLights.colours[i] = {0, 255, 0};
     
-    bot.SetLights(newLights);
+    bot.setLights(newLights);
     delay(500);
 
     //Set all lights to cyan
     for(int i = 0; i < LIGHT_COUNT; i++)
         newLights.colours[i] = {0, 255, 255};
     
-    bot.SetLights(newLights);
+    bot.setLights(newLights);
     delay(500);
 
     //Set all lights to blue
     for(int i = 0; i < LIGHT_COUNT; i++)
         newLights.colours[i] = {0, 0, 255};
     
-    bot.SetLights(newLights);
+    bot.setLights(newLights);
     delay(500);
 
     //Set all lights to purple
     for(int i = 0; i < LIGHT_COUNT; i++)
         newLights.colours[i] = {255, 0, 255};
     
-    bot.SetLights(newLights);
+    bot.setLights(newLights);
     delay(500);
 }
 
 void Motors_Loop()
 {
     //Set motor speed
-    bot.SetMotorSpeed(1, 0.1);
-    bot.SetMotorSpeed(2, -0.1);
+    bot.setMotorSpeed(1, 0.1);
+    bot.setMotorSpeed(2, -0.1);
 
     //Print encoder values
-    Serial.print("M1:\t"); Serial.print(bot.GetM1Encoder());
-    Serial.print("\tM2:\t"); Serial.println(bot.GetM2Encoder());
+    Serial.print("M1:\t"); Serial.print(bot.getM1Encoder());
+    Serial.print("\tM2:\t"); Serial.println(bot.getM2Encoder());
 
     delay(50);
 }
@@ -109,9 +105,9 @@ void Motors_Loop()
 void ToF_Loop()
 {
     //Read and Print all three Time of Flight sensors
-    Serial.print(bot.ReadToFSensor(TOF_LEFT)); Serial.print("\t\t");
-    Serial.print(bot.ReadToFSensor(TOF_CENTRE)); Serial.print("\t\t");
-    Serial.println(bot.ReadToFSensor(TOF_RIGHT));
+    Serial.print(bot.readToFSensor(TOF_LEFT)); Serial.print("\t\t");
+    Serial.print(bot.readToFSensor(TOF_CENTRE)); Serial.print("\t\t");
+    Serial.println(bot.readToFSensor(TOF_RIGHT));
 
     delay(50);
 }
@@ -119,7 +115,7 @@ void ToF_Loop()
 void IRCali_Loop()
 {
     //Read calibrated values of IR sensors
-    DB1_IRArray reading = bot.ReadIRSensors();
+    DB1_IRArray reading = bot.readIRSensors(true);
 
     //Print each value
     Serial.print(reading.farLeft); Serial.print("\t\t");
@@ -133,8 +129,8 @@ void IRCali_Loop()
 
 void IRRaw_Loop()
 {
-    //Read raw values of tIR sensors
-    DB1_IRArray reading = bot.ReadIRSensors(false);
+    //Read raw values of IR sensors
+    DB1_IRArray reading = bot.readIRSensors(false);
 
     //Print each value
     Serial.print(reading.farLeft); Serial.print("\t\t");
@@ -148,15 +144,15 @@ void IRRaw_Loop()
 
 void Colour_Loop()
 {
-    bot.SetWhiteLight(true);
-    VEML6040_Colour reading = bot.ReadColour(true);
+    bot.setWhiteLight(true);
+    VEML6040_Colour reading = bot.readColour(true);
 
     Serial.print("R:\t"); Serial.print(reading.red); 
     Serial.print("\tG:\t"); Serial.print(reading.green); 
     Serial.print("\tB:\t"); Serial.println(reading.blue);
 
     DB1_Colour lightColour = { (uint8_t)reading.red, (uint8_t)reading.green, (uint8_t)reading.blue };
-    bot.SetTopLight(lightColour);
+    bot.setTopLight(lightColour);
     delay(50);
 }
 
