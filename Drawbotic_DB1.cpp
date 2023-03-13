@@ -15,8 +15,13 @@ const DB1_Settings DB1::s_defaultSettings = {
     IR_READ_COUNT_DEFAULT,                              // IR Read Count
 };
 
-DB1_Orientation DB1::QuaternionToEuler(DB1_Quaternion q)
-{
+/*!
+ * \brief Converts a DB1_Quaternion to a Heading, Pitch and Roll Orientation
+ * 
+ * \param q - The Quaternion to convert
+ * \return DB1_Orientation - A new Heading, Pitch and Roll
+ */
+DB1_Orientation DB1::QuaternionToEuler(DB1_Quaternion q) {
   DB1_Orientation result;
 
   float sqr = q.r * q.r;
@@ -31,14 +36,11 @@ DB1_Orientation DB1::QuaternionToEuler(DB1_Quaternion q)
   return result;
 }
 
-void DB1::m1EncoderCallback()
-{
-  if (s_instance)
-  {
+void DB1::m1EncoderCallback() {
+  if (s_instance) {
     int m1EnAState = digitalRead(M1_E_A);
 
-    if (m1EnAState != s_instance->m_m1EnALastState && m1EnAState == 1)
-    {
+    if (m1EnAState != s_instance->m_m1EnALastState && m1EnAState == 1) {
       if (digitalRead(M1_E_B) != m1EnAState)
         s_instance->m_m1En--;
       else
@@ -49,14 +51,11 @@ void DB1::m1EncoderCallback()
   }
 }
 
-void DB1::m2EncoderCallback()
-{
-  if (s_instance)
-  {
+void DB1::m2EncoderCallback() {
+  if (s_instance) {
     int m2EnAState = digitalRead(M2_E_A);
 
-    if (m2EnAState != s_instance->m_m2EnALastState && m2EnAState == 1)
-    {
+    if (m2EnAState != s_instance->m_m2EnALastState && m2EnAState == 1) {
       if (digitalRead(M2_E_B) != m2EnAState)
         s_instance->m_m2En++;
       else
@@ -67,28 +66,23 @@ void DB1::m2EncoderCallback()
   }
 }
 
-void DB1::bnoIntCallback()
-{
-  if(s_instance)
-  {
+void DB1::bnoIntCallback() {
+  if(s_instance) {
     sh2_SensorValue_t sensorValue;
     if (!s_instance->m_imu.getSensorEvent(&sensorValue))
       return;
 
-    switch(sensorValue.sensorId)
-    {
+    switch(sensorValue.sensorId) {
       case SH2_LINEAR_ACCELERATION:
         s_instance->m_currentAccel.x = sensorValue.un.linearAcceleration.x;
         s_instance->m_currentAccel.y = sensorValue.un.linearAcceleration.y;
         s_instance->m_currentAccel.z = sensorValue.un.linearAcceleration.z;
-        if(s_instance->m_bumpCallback != NULL)
-        {
+        if(s_instance->m_bumpCallback != NULL) {
           //Check threshold
           float mag_sq = s_instance->m_currentAccel.x * s_instance->m_currentAccel.x + 
                          s_instance->m_currentAccel.y * s_instance->m_currentAccel.y + 
                          s_instance->m_currentAccel.z * s_instance->m_currentAccel.z;
-          if(mag_sq > (s_instance->m_bumpThreshold * s_instance->m_bumpThreshold))
-          {
+          if(mag_sq > (s_instance->m_bumpThreshold * s_instance->m_bumpThreshold)) {
             s_instance->m_bumpCallback();
           }
         }
@@ -104,12 +98,14 @@ void DB1::bnoIntCallback()
 }
 
 //------- Public Methods -------//
+/*!
+ * \brief Construct a new DB1 object
+ * 
+ */
 DB1::DB1() : m_lights(LIGHT_COUNT, RGB_DOUT, NEO_GRB + NEO_KHZ800),
              m_topLight(1, STAT_DOUT, NEO_GRB + NEO_KHZ800),
-             m_imu(IMU_RESET)
-{
-  for (int i = 0; i < LIGHT_COUNT; i++)
-  {
+             m_imu(IMU_RESET) {
+  for (int i = 0; i < LIGHT_COUNT; i++) {
     m_currentLights.colours[i].red = 0;
     m_currentLights.colours[i].green = 0;
     m_currentLights.colours[i].blue = 0;
@@ -127,13 +123,24 @@ DB1::DB1() : m_lights(LIGHT_COUNT, RGB_DOUT, NEO_GRB + NEO_KHZ800),
   s_instance = this;
 }
 
-bool DB1::init()
-{
+/*!
+ * \brief Initialise DB1 with Default Settings
+ * 
+ * \return true - Initialisation Completed Successfully
+ * \return false - Initialisation failed
+ */
+bool DB1::init() {
   return init(DB1::getDefaultSettings());
 }
 
-bool DB1::init(DB1_Settings settings)
-{
+/*!
+ * \brief Initialise DB1 with Custom Settings
+ * 
+ * \param settings - A DB1_Settings struct containing the desired settings
+ * \return true - Initialisation Completed Successfully
+ * \return false - Initialisation failed
+ */
+bool DB1::init(DB1_Settings settings) {
   Wire.begin();
   analogWriteResolution(16);
 
@@ -168,16 +175,14 @@ bool DB1::init(DB1_Settings settings)
   Serial.println("Servo Done");
 
   // Turn off ToFs
-  for (int i = 0; i < TOF_COUNT; i++)
-  {
+  for (int i = 0; i < TOF_COUNT; i++) {
     pinMode(TOF_EN_PINS[i], OUTPUT);
     digitalWrite(TOF_EN_PINS[i], LOW);
   }
   Serial.println("Turn off ToFs");
 
   // Setup tof sensors
-  for (int i = 0; i < TOF_COUNT; i++)
-  {
+  for (int i = 0; i < TOF_COUNT; i++) {
     digitalWrite(TOF_EN_PINS[i], HIGH);
     Serial.print("Turnning on pin ");
     Serial.println(TOF_EN_PINS[i]);
@@ -213,14 +218,22 @@ bool DB1::init(DB1_Settings settings)
   return true;
 }
 
-void DB1::setWhiteLight(bool on)
-{
+/*!
+ * \brief Turns the White LED for the colour sensor on/off
+ * 
+ * \param on - the desired state for the LED
+ */
+void DB1::setWhiteLight(bool on) {
   m_currentSettings.whiteLightOn = on;
   digitalWrite(LED_EN, on);
 }
 
-void DB1::setupIMU(DB1_IMUSettings settings)
-{
+/*!
+ * \brief Configues the BNO085 IMU to use the provided settings
+ * 
+ * \param settings - A DB1_IMUSettings struct containing the desired settings
+ */
+void DB1::setupIMU(DB1_IMUSettings settings) {
   pinMode(IMU_INT, INPUT_PULLUP);
   if(m_imu.begin_I2C())
     Serial.println("BNO085 started");
@@ -234,23 +247,37 @@ void DB1::setupIMU(DB1_IMUSettings settings)
   m_currentSettings.imu = settings;
 }
 
-void DB1::setupColourSensor(VEML6040_IntegrationTime colourIntTime)
-{
+/*!
+ * \brief Configures the VEML6040 RGBW colour sensor
+ * 
+ * \param colourIntTime - The desired integration time for the sensor
+ */
+void DB1::setupColourSensor(VEML6040_IntegrationTime colourIntTime) {
   m_colourSensor.begin();
   m_colourSensor.setConfig(colourIntTime);
   m_currentSettings.colourIntTime = colourIntTime;
 }
 
-void DB1::setupServo(DB1_ServoSettings settings)
-{
+/*!
+ * \brief Configures the Pen Lift servo to use the desired settings
+ * 
+ * \param settings - A DB1_ServoSettings struct containing the desired settings
+ */
+void DB1::setupServo(DB1_ServoSettings settings) {
   if (!m_penLift.attached())
     m_penLift.attach(settings.pin);
 
   m_currentSettings.servo = settings;
 }
 
-void DB1::setupToFSensor(int index, DB1_ToFSettings settings)
-{
+/*!
+ * \brief Configures one of the VL53L0X time of flight sensors to use the desired settings
+ * 
+ * \param index - The index of the sensor to configure
+ * \param settings - A DB1_ToFSettings struct containing the desired settings
+ */
+
+void DB1::setupToFSensor(int index, DB1_ToFSettings settings) {
   m_tofs[index].init();
   m_tofs[index].setTimeout(settings.timeout);
   m_tofs[index].setSignalRateLimit(settings.signalRateLimit);
@@ -262,8 +289,12 @@ void DB1::setupToFSensor(int index, DB1_ToFSettings settings)
   m_currentSettings.tof = settings;
 }
 
-void DB1::setupMotors(bool encoders)
-{
+/*!
+ * \brief Configures the motors
+ * 
+ * \param encoders - if true, the encoders will be set up and start counting steps
+ */
+void DB1::setupMotors(bool encoders) {
   pinMode(M1_DIR_A, OUTPUT);
   pinMode(M1_DIR_B, OUTPUT);
   pinMode(M2_DIR_A, OUTPUT);
@@ -274,15 +305,13 @@ void DB1::setupMotors(bool encoders)
   pinMode(M2_E_A, INPUT);
   pinMode(M2_E_B, INPUT);
 
-  if (encoders)
-  {
+  if (encoders) {
     attachInterrupt(M1_E_A, m1EncoderCallback, CHANGE);
     attachInterrupt(M1_E_B, m1EncoderCallback, CHANGE);
     attachInterrupt(M2_E_A, m2EncoderCallback, CHANGE);
     attachInterrupt(M2_E_B, m2EncoderCallback, CHANGE);
   }
-  else
-  {
+  else {
     detachInterrupt(M1_E_A);
     detachInterrupt(M1_E_B);
     detachInterrupt(M2_E_A);
@@ -292,8 +321,10 @@ void DB1::setupMotors(bool encoders)
   m_currentSettings.useEncoders = encoders;
 }
 
-void DB1::calibrateIRArray()
-{
+/*!
+ * \brief Calibrates the IR array. If motor power is present, the DB1 will spin on the spot and find the highest and lowest values to use as calibration min and max. Make sure you place the DB1 on a sample that shows the expected darkest and lightest value.
+ */
+void DB1::calibrateIRArray() {
   m_irLow.centre = 1024;
   m_irLow.left = 1024;
   m_irLow.right = 1024;
@@ -308,8 +339,7 @@ void DB1::calibrateIRArray()
 
   setMotorSpeed(1, 0.1);
   setMotorSpeed(2, -0.1);
-  for (int i = 0; i < IR_CALIBRATION_COUNT; i++)
-  {
+  for (int i = 0; i < IR_CALIBRATION_COUNT; i++) {
     DB1_IRArray ir = readIRSensors(false);
     if (ir.centre < m_irLow.centre)
       m_irLow.centre = ir.centre;
@@ -364,19 +394,25 @@ void DB1::calibrateIRArray()
   Serial.println(m_irHigh.farRight);
 }
 
-void DB1::setIRCalibration(DB1_IRArray low, DB1_IRArray high)
-{
+/*!
+ * \brief Sets the IR calibration min and max to the provided values. Useful if you have already determined the lightest and darkest features
+ * 
+ * \param low - The desired lowest values for each sensor
+ * \param high - The desired highest value for each sensor
+ */
+void DB1::setIRCalibration(DB1_IRArray low, DB1_IRArray high) {
   m_irLow = low;
   m_irHigh = high;
 }
 
-void DB1::calibrateColourSensor()
-{
+/*!
+ * \brief Calibrates the VEML6040 colour sensor. The DB1 will turn on the white LED and take an average high/white reading then turn off the LED and take an average low/black reading. Make sure you place the DB1 on a white surface
+ */
+void DB1::calibrateColourSensor() {
   bool currentLightSetting = m_currentSettings.whiteLightOn;
   VEML6040_Colour result;
   setWhiteLight(true);
-  for (int i = 0; i < COLOUR_CALIBRATION_COUNT; i++)
-  {
+  for (int i = 0; i < COLOUR_CALIBRATION_COUNT; i++) {
     VEML6040_Colour reading = m_colourSensor.getColour();
     result.red += reading.red;
     result.green += reading.green;
@@ -392,8 +428,7 @@ void DB1::calibrateColourSensor()
 
   setWhiteLight(false);
   result = {0};
-  for (int i = 0; i < COLOUR_CALIBRATION_COUNT; i++)
-  {
+  for (int i = 0; i < COLOUR_CALIBRATION_COUNT; i++) {
     VEML6040_Colour reading = m_colourSensor.getColour();
     result.red += reading.red;
     result.green += reading.green;
@@ -410,27 +445,50 @@ void DB1::calibrateColourSensor()
   setWhiteLight(currentLightSetting);
 }
 
-void DB1::setLights(DB1_Lights lights)
-{
+/*!
+ * \brief Sets the colour calibration to the provided high/white and low/black readings
+ * 
+ * \param low - The desired low/black value
+ * \param high - The desired high/white value
+ */
+void DB1::setColourCalibration(VEML6040_Colour low, VEML6040_Colour high) {
+  m_colourLow = low;
+  m_colourHigh = high;
+}
+
+/*!
+ * \brief Sets the bottom side RGB LEDs to the provided colours
+ * 
+ * \param lights - A DB1_Lights struct containing the desired colours
+ */
+void DB1::setLights(DB1_Lights lights) {
   m_lights.clear();
-  for (int i = 0; i < LIGHT_COUNT; i++)
-  {
+  for (int i = 0; i < LIGHT_COUNT; i++) {
     m_lights.setPixelColor(i, lights.colours[i].red, lights.colours[i].green, lights.colours[i].blue);
   }
   m_lights.show();
   m_currentLights = lights;
 }
 
-void DB1::setTopLight(DB1_Colour light)
-{
+/*!
+ * \brief Sets the top side RGB LED to the provided colour
+ * 
+ * \param light - A DB1_Colour containing the desired colour
+ */
+void DB1::setTopLight(DB1_Colour light) {
   m_currentTopLight = light;
   m_topLight.clear();
   m_topLight.setPixelColor(0, m_currentTopLight.red, m_currentTopLight.green, m_currentTopLight.blue);
   m_topLight.show();
 }
 
-float DB1::updateBatteryLevel(bool lights)
-{
+/*!
+ * \brief Reads the current battery level
+ * 
+ * \param lights - (Default: true) If true, updates the battery LEDs to reflect current level
+ * \return The remaining battery percentage
+ */
+float DB1::updateBatteryLevel(bool lights) {
   int battLevel = analogRead(V_DIV_BATT);
 
   float voltage = battLevel;
@@ -444,8 +502,7 @@ float DB1::updateBatteryLevel(bool lights)
   digitalWrite(BATT_LVL3, LOW);
   digitalWrite(BATT_LVL4, LOW);
 
-  if (lights)
-  {
+  if (lights) {
     if (percentage > 10)
       digitalWrite(BATT_LVL1, HIGH);
     if (percentage > 25)
@@ -458,29 +515,40 @@ float DB1::updateBatteryLevel(bool lights)
   return percentage;
 }
 
-void DB1::setPen(bool down)
-{
+/*!
+ * \brief Updates the state of the pen
+ * 
+ * \param down - If true, sets the pen to the down position. If false, sets the pen to the up position
+ */
+void DB1::setPen(bool down) {
   if (down)
     m_penLift.write(m_currentSettings.servo.penDownPosition);
   else
     m_penLift.write(m_currentSettings.servo.penUpPosition);
 }
 
-void DB1::setPenServo(double pos)
-{
+/*!
+ * \brief Sets the poistion of the pen to an arbitrary point 
+ * 
+ * \param pos - A position between 0.0 - 1.0 where 0.0 is all the way up and 1.0 is all the way down
+ */
+void DB1::setPenServo(double pos) {
   double newPos = mapf(pos, 0.0, 1.0, m_currentSettings.servo.penUpPosition, m_currentSettings.servo.penDownPosition);
   m_penLift.write(newPos);
 }
 
-void DB1::setMotorSpeed(int motor, double speed)
-{
+/*!
+ * \brief Sets the speed of a specific motor
+ * 
+ * \param motor - The motor to set the speed of. Valid values are 1 or 2
+ * \param speed - The speed to set. Valid values are -1.0 to 1.0 where 1.0 is full speed forward, -1.0 is full spped backwards and 0.0 is no movement
+ */
+void DB1::setMotorSpeed(int motor, double speed) {
   bool direction = (speed > 0);
   double pwmVal = abs(speed) * 65535.0;
 
-  if (motor == 1)
-  {
-    if (direction)
-    {
+  if (motor == 1) {
+    if (direction) {
       digitalWrite(M1_DIR_A, HIGH);
       digitalWrite(M1_DIR_B, LOW);
     }
@@ -491,15 +559,13 @@ void DB1::setMotorSpeed(int motor, double speed)
     }
     analogWrite(M1_PWM, (int)pwmVal);
   }
-  else if (motor == 2)
-  {
+  else if (motor == 2) {
     if (direction)
     {
       digitalWrite(M2_DIR_A, LOW);
       digitalWrite(M2_DIR_B, HIGH);
     }
-    else
-    {
+    else {
       digitalWrite(M2_DIR_A, HIGH);
       digitalWrite(M2_DIR_B, LOW);
     }
@@ -507,26 +573,38 @@ void DB1::setMotorSpeed(int motor, double speed)
   }
 }
 
-long DB1::getM1EncoderDelta()
-{
+/*!
+ * \brief The change in the Motor 1 Encoder since the last call to this method
+ * 
+ * \return The change in the Motor 1 Encoder since the last call to this method
+ */
+long DB1::getM1EncoderDelta() {
   long delta = m_m1En - m_lastM1En;
   m_lastM1En = m_m1En;
 
   return delta;
 }
 
-long DB1::getM2EncoderDelta()
-{
+/*!
+ * \brief The change in the Motor 2 Encoder since the last call to this method
+ * 
+ * \return The change in the Motor 2 Encoder since the last call to this method
+ */
+long DB1::getM2EncoderDelta() {
   long delta = m_m2En - m_lastM2En;
   m_lastM2En = m_m2En;
 
   return delta;
 }
 
-VEML6040_Colour DB1::readColour(bool calibrated)
-{
-  if (calibrated)
-  {
+/*!
+ * \brief Reads the current colour from the VEML6040 colour sensor
+ * 
+ * \param calibrated - (Default: true) If true, the returned Colour will be corrected by the current calibration values
+ * \return The read colour value 
+ */
+VEML6040_Colour DB1::readColour(bool calibrated) {
+  if (calibrated) {
     VEML6040_Colour reading = m_colourSensor.getColour();
     reading.red = constrain(mapf(reading.red, 0, m_colourHigh.red, 0, 255), 0, 255);
     reading.green = constrain(mapf(reading.green, 0, m_colourHigh.green, 0, 255), 0, 255);
@@ -538,8 +616,13 @@ VEML6040_Colour DB1::readColour(bool calibrated)
   return m_colourSensor.getColour();
 }
 
-DB1_IRArray DB1::readIRSensors(bool calibrated)
-{
+/*!
+ * \brief Reads the current values from the IR line detectors
+ * 
+ * \param calibrated - (Default: true) If true, the returned values will be corrected by the current calibration values
+ * \return The read IR values 
+ */
+DB1_IRArray DB1::readIRSensors(bool calibrated) {
   DB1_IRArray result; // = {0};
   int centre = 0;
   int left = 0;
@@ -547,8 +630,7 @@ DB1_IRArray DB1::readIRSensors(bool calibrated)
   int farLeft = 0;
   int farRight = 0;
 
-  for (int i = 0; i < m_currentSettings.irReadCount; i++)
-  {
+  for (int i = 0; i < m_currentSettings.irReadCount; i++) {
     centre += analogRead(LINE1);
     right += analogRead(LINE2);
     left += analogRead(LINE3);
@@ -562,8 +644,7 @@ DB1_IRArray DB1::readIRSensors(bool calibrated)
   result.farRight = farRight / m_currentSettings.irReadCount;
   result.farLeft = farLeft / m_currentSettings.irReadCount;
 
-  if (calibrated)
-  {
+  if (calibrated) {
     result.centre = constrain(map(result.centre, m_irLow.centre, m_irHigh.centre, 0, 255), 0, 255);
     result.right = constrain(map(result.right, m_irLow.right, m_irHigh.right, 0, 255), 0, 255);
     result.left = constrain(map(result.left, m_irLow.left, m_irHigh.left, 0, 255), 0, 255);
@@ -574,18 +655,30 @@ DB1_IRArray DB1::readIRSensors(bool calibrated)
   return result;
 }
 
-int DB1::readToFSensor(DB1_ToFLocation location)
-{
+/*!
+ * \brief Reads the current range from a specific VL53L0X Time of Flight Sensor
+ * 
+ * \param location - Which Time of Flight Sensor to read. Valid values are:\n TOF_LEFT\n TOF_CENTRE\n TOF_RIGHT
+ * \return The read range in millimetres
+ */
+int DB1::readToFSensor(DB1_ToFLocation location) {
   return m_tofs[location].readRangeContinuousMillimeters();
 }
 
-void DB1::enableBumpInterrupt(DB1_BumpInt_t callback, uint32_t threshold)
-{
+/*!
+ * \brief Enables monitoring of high g impacts on the IMU, calls the callback when one occurs
+ * 
+ * \param callback - A function pointer that is called when the bump occurs. This fuction is run in an interrupt, avoid performing any intensive operations in it
+ * \param threshold - The threshold in milligs above which the callback will be run
+ */
+void DB1::enableBumpInterrupt(DB1_BumpInt_t callback, uint32_t threshold) {
   m_bumpCallback = callback;
   m_bumpThreshold = threshold;
 }
 
-void DB1::disableBumpInterrupt()
-{
+/*!
+ * \brief Disables the high g monitoring of the IMU
+ */
+void DB1::disableBumpInterrupt() {
   m_bumpCallback = NULL;
 }

@@ -1,5 +1,13 @@
-#ifndef DRAWBOTICDB1_H
-#define DRAWBOTICDB1_H
+/*!
+ * \file Drawbotic_DB1.h
+ * \author Elliott Wilson (elliott.wilson@monash.edu)
+ * \brief Declares the DB1 class and required structs and enums
+ * \version 1.0
+ * \date 2023-03-13
+ */
+
+#ifndef DRAWBOTIC_DB1_H
+#define DRAWBOTIC_DB1_H
 
 #include <Wire.h>
 #include <Servo.h>
@@ -10,86 +18,118 @@
 
 #include "Drawbotic_DB1_Defines.h"
 
-struct DB1_Colour
-{
-  uint8_t red;
-  uint8_t green;
-  uint8_t blue;
+/*!
+ * \brief A struct to represent an RGB colour
+ */
+struct DB1_Colour {
+  uint8_t red;    //!< The red component
+  uint8_t green;  //!< The green component
+  uint8_t blue;   //!< The blue component
 };
 
-struct DB1_Lights
-{
-  DB1_Colour colours[LIGHT_COUNT];
+/*!
+ * \brief A struct containing the RGB colours for all of the RGB LEDs on board
+ */
+struct DB1_Lights {
+  DB1_Colour colours[LIGHT_COUNT];  //!< An array containing the colour value for each light
 };
 
-struct DB1_Vector3
-{
-  float x, y, z;
+/*!
+ * \brief A 3D vector struct used to represent DB1 acceleration
+ */
+struct DB1_Vector3 {
+  float x;  //!< The x component
+  float y;  //!< The y component
+  float z;  //!< The z component
 };
 
-struct DB1_Quaternion
-{
-  float r, i, j, k;
+/*!
+ * \brief A 4D quaternion stuct used to represent DB1 orientation
+ */
+struct DB1_Quaternion {
+  float r;  //!< The real component
+  float i;  //!< The i component
+  float j;  //!< The j component
+  float k;  //!< The k component
 };
 
-struct DB1_Orientation
-{
-  float heading, pitch, roll;
+/*!
+ * \brief A struct used to represent the Euler Orientation of the DB1
+ */
+struct DB1_Orientation {
+  float heading;  //!< The heading (Z) component
+  float pitch;    //!< The pitch (X) component
+  float roll;     //!< The roll (Y) component
 };
 
-struct DB1_IRArray
-{
-  int farLeft;
-  int left;
-  int centre;
-  int right;
-  int farRight;
+/*!
+ * \brief A struct used to represent the state of the IR line detectors
+ */
+struct DB1_IRArray {
+  int farLeft;  //!< The value of the far left IR line detector
+  int left;     //!< The value of the left IR line detector
+  int centre;   //!< The value of the centre IR line detector
+  int right;    //!< The value of the right IR line detector
+  int farRight; //!< The value of the far right IR line detector
 };
 
-struct DB1_IMUSettings
-{
-  uint16_t orientationRate_ms;
-  uint16_t accelerationRate_ms;
+/*!
+ * \brief A struct containing the settings for the BNO085 IMU
+ */
+struct DB1_IMUSettings {
+  uint16_t orientationRate_ms;  //!< The sample rate of the orientation in milliseconds
+  uint16_t accelerationRate_ms; //!< The sample rate of the acceleration in milliseconds
 };
 
-struct DB1_ServoSettings
-{
-  int pin;
-  double penUpPosition;
-  double penDownPosition;
+/*!
+ * \brief A struct containing the settings for the Pen Lift Servo
+ */
+struct DB1_ServoSettings {
+  int pin;                //!< The pin that the servo is attached to
+  double penUpPosition;   //!< The servo position for when the pen is up
+  double penDownPosition; //!< The servo position for when the pen is down
 };
 
-struct DB1_ToFSettings
-{
-  int timeout;
-  float signalRateLimit;
-  uint32_t measurementTimingBudget;
-  uint8_t prePclks;
-  uint8_t finalPclks;
+/*!
+ * \brief A struct containing the settings for the VL53L0X Time of Flight sensors
+ */
+struct DB1_ToFSettings {
+  int timeout; //!< The timeout period in milliseconds, used to determine the amount of time before a reading timeout is raised
+  float signalRateLimit; //!< The signal rate limit in mega counts per second, this limits the amplitude of the signal reflected from the target and detected by the device.
+  uint32_t measurementTimingBudget; //!< The total measurement timing budget in microseconds, this is overall time each measurement takes.
+  uint8_t prePclks; //!< The Pre VCSEL Pulse Period
+  uint8_t finalPclks; //!< The FInal VCSEL Pulse Period
 };
 
-struct DB1_Settings
-{
-  DB1_IMUSettings imu;
-  DB1_ServoSettings servo;
-  DB1_ToFSettings tof;
-  VEML6040_IntegrationTime colourIntTime;
-  bool useEncoders;
-  bool whiteLightOn;
-  int irReadCount;
+/*!
+ * \brief A struct containing all of the settings need to initialise DB1
+ */
+struct DB1_Settings {
+  DB1_IMUSettings imu;                    //!< The IMU settings, see DB1_IMUSettings
+  DB1_ServoSettings servo;                //!< The Servo settings, see DB1_ServoSettings
+  DB1_ToFSettings tof;                    //!< The Time of Flight settings, see DB1_ToFSettings
+  VEML6040_IntegrationTime colourIntTime; //!< The integration time for the VEML6040 colour sensor. \n Supported values are:\n VEML6040_IT_40MS\n VEML6040_IT_80MS\n VEML6040_IT_160MS\n VEML6040_IT_320MS\n VEML6040_IT_640MS\n VEML6040_IT_1280MS
+  bool useEncoders;                       //!< Sets if the encoders should be enabled
+  bool whiteLightOn;                      //!< Sets of the white LED for the colour sensor should be on by default
+  int irReadCount;                        //!< Sets the average window size for reading the IR line detectors, higher values increase accuracy but changes take longer to appear
 };
 
-enum DB1_ToFLocation
-{
+/*!
+ * \brief An enum describing the Time of Flight sensor locations, see readToFSensor
+ */
+enum DB1_ToFLocation {
   TOF_LEFT,
   TOF_CENTRE,
   TOF_RIGHT
 };
 
+//! The bump interrupt callback type
 typedef void (*DB1_BumpInt_t)();
 
-class DB1
-{
+/*!
+ * \brief The class containing all of the functionality of the Drawbotic DB1
+ */
+class DB1 {
 public:
   DB1();
 
@@ -108,12 +148,41 @@ public:
   //Sensor calibrations
   void calibrateIRArray();
   void setIRCalibration(DB1_IRArray low, DB1_IRArray high);
+  /*!
+   * \brief The low calibration value of each sensor
+   * \return The low calibration value of each sensor 
+   */
+  DB1_IRArray getIRLowCalibration() { return m_irLow; }
+  /*!
+   * \brief The high calibration value of each sensor
+   * \return The high calibration value of each sensor 
+   */
+  DB1_IRArray getIRHighCalibration() { return m_irHigh; }
   void calibrateColourSensor();
+  void setColourCalibration(VEML6040_Colour low, VEML6040_Colour high);
+  /*!
+   * \brief The low/black calibration value of the sensor
+   * \return The low/black calibration value of the sensor
+   */
+  VEML6040_Colour getColourLowCalibration() { return m_colourLow; }
+  /*!
+   * \brief The high/white calibration value of the sensor
+   * \return The high/white calibration value of the sensor 
+   */
+  VEML6040_Colour getColourHighCalibration() { return m_colourHigh; }
   
   //RGB Lighting
   void setLights(DB1_Lights lights);
+  /*!
+   * \brief The current colours of the bottom side RGB LEDs
+   * \return The current colours of the bottom side RGB LEDs 
+   */
   DB1_Lights getCurrentLights() { return m_currentLights; }
   void setTopLight(DB1_Colour light);
+  /*!
+   * \brief The current colour of the top side RGB LED
+   * \return The current colour of the top side RGB LED
+   */
   DB1_Colour getCurrentTopLight() { return m_currentTopLight; }
 
   //Battery Fuel Guage
@@ -125,7 +194,15 @@ public:
 
   //Motor control
   void setMotorSpeed(int motor, double speed);
+  /*!
+   * \brief The current value of the Motor 1 encoder
+   * \return The current value of the Motor 1 encoder 
+   */
   long getM1Encoder() { return m_m1En; }
+  /*!
+   * \brief The current value of the Motor 2 encoder
+   * \return The current value of the Motor 2 encoder 
+   */
   long getM2Encoder() { return m_m2En; }
 
   long getM1EncoderDelta();
@@ -135,14 +212,34 @@ public:
   VEML6040_Colour readColour(bool calibrated = true);
   int readToFSensor(DB1_ToFLocation location);
   DB1_IRArray readIRSensors(bool calibrated = true);
+  /*!
+   * \brief The current Rotation (Quaternion) of the DB1
+   * \return The current Rotation (Quaternion) of the DB1 
+   */
   DB1_Quaternion getRotation() { return m_currentRotation; }
+  /*!
+   * \brief The current Orientation (heading, pitch, roll) of the DB1
+   * \return The current Orientation (heading, pitch, roll) of the DB1 
+   */
   DB1_Orientation getOrientation() { return DB1::QuaternionToEuler(m_currentRotation); }
+  /*!
+   * \brief The current Linear Acceleration of the DB1
+   * \return The current Linear Acceleration of the DB1 
+   */
   DB1_Vector3 getAcceleration() { return m_currentAccel; }
   void enableBumpInterrupt(DB1_BumpInt_t callback, uint32_t threshold_mg = 1000);
   void disableBumpInterrupt();
 
   //Settings structure
+  /*!
+   * \brief The current settings for the DB1
+   * \return The current settings for the DB1 
+   */
   DB1_Settings getCurrentSettings() { return m_currentSettings; }
+  /*!
+   * \brief The default settings for the DB1
+   * \return The default settings for the DB1 
+   */
   static DB1_Settings getDefaultSettings() { return s_defaultSettings; }
 
   //Helper Functions
@@ -164,19 +261,23 @@ private:
   DB1_Lights m_currentLights;
   DB1_Colour m_currentTopLight;
 
+  //IR calibration values
   DB1_IRArray m_irHigh;
   DB1_IRArray m_irLow;
 
+  //Colour calibration values
   VEML6040_Colour m_colourLow;
   VEML6040_Colour m_colourHigh;
 
+  //Encoder memory
   int m_m1EnALastState;
   int m_m2EnALastState;
-
   long m_m1En;
   long m_m2En;
   long m_lastM1En;
   long m_lastM2En;
+
+  //Motor speeds
   double m_m1Speed;
   double m_m2Speed;
 
@@ -190,8 +291,7 @@ private:
   static void m2EncoderCallback();
   static void bnoIntCallback();
 
-  double mapf(double val, double in_min, double in_max, double out_min, double out_max)
-  {
+  double mapf(double val, double in_min, double in_max, double out_min, double out_max) {
     return (val - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
   }
 };

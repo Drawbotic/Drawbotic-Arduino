@@ -2,199 +2,185 @@
 
 DB1 bot;
 
-void setup()
-{
-    Serial.begin(9600);
-    bot.init();
-    
-    //bot.calibrateIRArray();       //Uncomment if you want the robot to calibrate the IR sensors. Robot will spin on spot for a few seconds!
-    //bot.calibrateColourSensor();  //Uncomment to calibrate the colour sensor. Make sure the robot is on a white surface.
+void setup() {
+  Serial.begin(9600);
+  bot.init();
+  
+  //bot.calibrateIRArray();       //Uncomment if you want the robot to calibrate the IR sensors. Robot will spin on spot for a few seconds!
+  //bot.calibrateColourSensor();  //Uncomment to calibrate the colour sensor. Make sure the robot is on a white surface.
 }
 
 
-void loop()
-{
-    //Uncomment each method to test different functionality
+void loop() {
+  //Uncomment each method to test different functionality
 
-    //I2C_Loop();
-    //Colour_Loop();
-    //IRCali_Loop();
-    //IRRaw_Loop();
-    //ToF_Loop();
-    //Motors_Loop();
-    //RGB_Loop();
-    //Pen_Loop();
-    Battery_Loop();
+  //I2C_Loop();
+  //Colour_Loop();
+  //IRCali_Loop();
+  //IRRaw_Loop();
+  //ToF_Loop();
+  //Motors_Loop();
+  //RGB_Loop();
+  //Pen_Loop();
+  Battery_Loop();
 }
 
-void Battery_Loop()
-{
-    Serial.println(bot.updateBatteryLevel());
+void Battery_Loop() {
+  Serial.println(bot.updateBatteryLevel());
 
-    delay(1000);
+  delay(1000);
 }
 
-void Pen_Loop()
-{
-    bot.setPen(true);
-    delay(2000);
-    bot.setPen(false);
-    delay(2000);
+void Pen_Loop() {
+  bot.setPen(true);
+  delay(2000);
+  bot.setPen(false);
+  delay(2000);
 }
 
-void RGB_Loop()
-{
-    DB1_Lights newLights;
+void RGB_Loop() {
+  DB1_Lights newLights;
 
-    //Set all lights to red
-    for(int i = 0; i < LIGHT_COUNT; i++)
-        newLights.colours[i] = {255, 0, 0};
-    
-    bot.setLights(newLights);
-    delay(500);
+  //Set all lights to red
+  for(int i = 0; i < LIGHT_COUNT; i++)
+    newLights.colours[i] = {255, 0, 0};
+  
+  bot.setLights(newLights);
+  delay(500);
 
-    //Set all lights to yellow
-    for(int i = 0; i < LIGHT_COUNT; i++)
-        newLights.colours[i] = {255, 255, 0};
-    
-    bot.setLights(newLights);
-    delay(500);
+  //Set all lights to yellow
+  for(int i = 0; i < LIGHT_COUNT; i++)
+    newLights.colours[i] = {255, 255, 0};
+  
+  bot.setLights(newLights);
+  delay(500);
 
-    //Set all lights to green
-    for(int i = 0; i < LIGHT_COUNT; i++)
-        newLights.colours[i] = {0, 255, 0};
-    
-    bot.setLights(newLights);
-    delay(500);
+  //Set all lights to green
+  for(int i = 0; i < LIGHT_COUNT; i++)
+    newLights.colours[i] = {0, 255, 0};
+  
+  bot.setLights(newLights);
+  delay(500);
 
-    //Set all lights to cyan
-    for(int i = 0; i < LIGHT_COUNT; i++)
-        newLights.colours[i] = {0, 255, 255};
-    
-    bot.setLights(newLights);
-    delay(500);
+  //Set all lights to cyan
+  for(int i = 0; i < LIGHT_COUNT; i++)
+    newLights.colours[i] = {0, 255, 255};
+  
+  bot.setLights(newLights);
+  delay(500);
 
-    //Set all lights to blue
-    for(int i = 0; i < LIGHT_COUNT; i++)
-        newLights.colours[i] = {0, 0, 255};
-    
-    bot.setLights(newLights);
-    delay(500);
+  //Set all lights to blue
+  for(int i = 0; i < LIGHT_COUNT; i++)
+    newLights.colours[i] = {0, 0, 255};
+  
+  bot.setLights(newLights);
+  delay(500);
 
-    //Set all lights to purple
-    for(int i = 0; i < LIGHT_COUNT; i++)
-        newLights.colours[i] = {255, 0, 255};
-    
-    bot.setLights(newLights);
-    delay(500);
+  //Set all lights to purple
+  for(int i = 0; i < LIGHT_COUNT; i++)
+    newLights.colours[i] = {255, 0, 255};
+  
+  bot.setLights(newLights);
+  delay(500);
 }
 
-void Motors_Loop()
-{
-    //Set motor speed
-    bot.setMotorSpeed(1, 0.1);
-    bot.setMotorSpeed(2, -0.1);
+void Motors_Loop() {
+  //Set motor speed
+  bot.setMotorSpeed(1, 0.1);
+  bot.setMotorSpeed(2, -0.1);
 
-    //Print encoder values
-    Serial.print("M1:\t"); Serial.print(bot.getM1Encoder());
-    Serial.print("\tM2:\t"); Serial.println(bot.getM2Encoder());
+  //Print encoder values
+  Serial.print("M1:\t"); Serial.print(bot.getM1Encoder());
+  Serial.print("\tM2:\t"); Serial.println(bot.getM2Encoder());
 
-    delay(50);
+  delay(50);
 }
 
-void ToF_Loop()
-{
-    //Read and Print all three Time of Flight sensors
-    Serial.print(bot.readToFSensor(TOF_LEFT)); Serial.print("\t\t");
-    Serial.print(bot.readToFSensor(TOF_CENTRE)); Serial.print("\t\t");
-    Serial.println(bot.readToFSensor(TOF_RIGHT));
+void ToF_Loop() {
+  //Read and Print all three Time of Flight sensors
+  Serial.print(bot.readToFSensor(TOF_LEFT)); Serial.print("\t\t");
+  Serial.print(bot.readToFSensor(TOF_CENTRE)); Serial.print("\t\t");
+  Serial.println(bot.readToFSensor(TOF_RIGHT));
 
-    delay(50);
+  delay(50);
 }
 
-void IRCali_Loop()
-{
-    //Read calibrated values of IR sensors
-    DB1_IRArray reading = bot.readIRSensors(true);
+void IRCali_Loop() {
+  //Read calibrated values of IR sensors
+  DB1_IRArray reading = bot.readIRSensors(true);
 
-    //Print each value
-    Serial.print(reading.farLeft); Serial.print("\t\t");
-    Serial.print(reading.left); Serial.print("\t");
-    Serial.print(reading.centre); Serial.print("\t");
-    Serial.print(reading.right); Serial.print("\t\t");
-    Serial.println(reading.farRight);
+  //Print each value
+  Serial.print(reading.farLeft); Serial.print("\t\t");
+  Serial.print(reading.left); Serial.print("\t");
+  Serial.print(reading.centre); Serial.print("\t");
+  Serial.print(reading.right); Serial.print("\t\t");
+  Serial.println(reading.farRight);
 
-    delay(50);
+  delay(50);
 }
 
-void IRRaw_Loop()
-{
-    //Read raw values of IR sensors
-    DB1_IRArray reading = bot.readIRSensors(false);
+void IRRaw_Loop() {
+  //Read raw values of IR sensors
+  DB1_IRArray reading = bot.readIRSensors(false);
 
-    //Print each value
-    Serial.print(reading.farLeft); Serial.print("\t\t");
-    Serial.print(reading.left); Serial.print("\t");
-    Serial.print(reading.centre); Serial.print("\t");
-    Serial.print(reading.right); Serial.print("\t\t");
-    Serial.println(reading.farRight);
+  //Print each value
+  Serial.print(reading.farLeft); Serial.print("\t\t");
+  Serial.print(reading.left); Serial.print("\t");
+  Serial.print(reading.centre); Serial.print("\t");
+  Serial.print(reading.right); Serial.print("\t\t");
+  Serial.println(reading.farRight);
 
-    delay(50);
+  delay(50);
 }
 
-void Colour_Loop()
-{
-    bot.setWhiteLight(true);
-    VEML6040_Colour reading = bot.readColour(true);
+void Colour_Loop() {
+  bot.setWhiteLight(true);
+  VEML6040_Colour reading = bot.readColour(true);
 
-    Serial.print("R:\t"); Serial.print(reading.red); 
-    Serial.print("\tG:\t"); Serial.print(reading.green); 
-    Serial.print("\tB:\t"); Serial.println(reading.blue);
+  Serial.print("R:\t"); Serial.print(reading.red); 
+  Serial.print("\tG:\t"); Serial.print(reading.green); 
+  Serial.print("\tB:\t"); Serial.println(reading.blue);
 
-    DB1_Colour lightColour = { (uint8_t)reading.red, (uint8_t)reading.green, (uint8_t)reading.blue };
-    bot.setTopLight(lightColour);
-    delay(50);
+  DB1_Colour lightColour = { (uint8_t)reading.red, (uint8_t)reading.green, (uint8_t)reading.blue };
+  bot.setTopLight(lightColour);
+  delay(50);
 }
 
-void I2C_Loop()
-{
-    byte error, address;
-    int nDevices;
+void I2C_Loop() {
+  byte error, address;
+  int nDevices;
 
-    Serial.println("Scanning...");
+  Serial.println("Scanning...");
 
-    nDevices = 0;
-    for(address = 1; address < 127; address++ ) 
-    {
-        // The i2c_scanner uses the return value of
-        // the Write.endTransmisstion to see if
-        // a device did acknowledge to the address.
+  nDevices = 0;
+  for(address = 1; address < 127; address++ ) {
+    // The i2c_scanner uses the return value of
+    // the Write.endTransmisstion to see if
+    // a device did acknowledge to the address.
 
-        Wire.beginTransmission(address);
-        error = Wire.endTransmission();
-        if (error == 0)
-        {
-            Serial.print("I2C device found at address 0x");
-            if (address<16) 
-            Serial.print("0");
-            Serial.print(address,HEX);
-            Serial.println("  !");
-            nDevices++;
-        }
-        else if (error==4) 
-        {
-            Serial.print("Unknown error at address 0x");
-            if (address<16) 
-            Serial.print("0");
-            Serial.println(address,HEX);
-        }
-        //delay(10); 
+    Wire.beginTransmission(address);
+    error = Wire.endTransmission();
+    if (error == 0) {
+      Serial.print("I2C device found at address 0x");
+      if (address<16) 
+      Serial.print("0");
+      Serial.print(address,HEX);
+      Serial.println("  !");
+      nDevices++;
     }
-    if (nDevices == 0)
-        Serial.println("No I2C devices found\n");
-    else
-        Serial.println("done\n");
-    //while(1){}
+    else if (error==4) {
+      Serial.print("Unknown error at address 0x");
+      if (address<16) 
+      Serial.print("0");
+      Serial.println(address,HEX);
+    }
+    //delay(10); 
+  }
+  if (nDevices == 0)
+    Serial.println("No I2C devices found\n");
+  else
+    Serial.println("done\n");
+  //while(1){}
 
-    delay(1000);           // wait 5 seconds for next scan
+  delay(1000);           // wait 5 seconds for next scan
 }
