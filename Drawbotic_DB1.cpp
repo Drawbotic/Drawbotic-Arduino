@@ -669,7 +669,7 @@ int DB1::readToFSensor(DB1_ToFLocation location) {
  * \brief Enables monitoring of high g impacts on the IMU, calls the callback when one occurs
  * 
  * \param callback - A function pointer that is called when the bump occurs. This fuction is run in an interrupt, avoid performing any intensive operations in it
- * \param threshold - The threshold in milligs above which the callback will be run
+ * \param threshold - (Default: 1000) The threshold in milligs above which the callback will be run
  */
 void DB1::enableBumpInterrupt(DB1_BumpInt_t callback, uint32_t threshold) {
   m_bumpCallback = callback;
