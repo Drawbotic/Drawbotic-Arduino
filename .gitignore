@@ -2,3 +2,6 @@
 html/
 latex/
 xml/
+_build/
+_static/
+_templates/
