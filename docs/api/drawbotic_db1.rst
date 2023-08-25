@@ -3,7 +3,7 @@
 DB1 Class
 =========
 
-.. doxygenclass:: DB1
+.. doxygenclass:: Drawbotic_DB1
     :project: Drawbotic-Arduino
 
 .. doxygentypedef:: DB1_BumpInt_t
