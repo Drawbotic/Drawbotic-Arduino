@@ -136,6 +136,7 @@ public:
   //Singleton setup
   /*!
    * \brief Accessor for the shared Singleton instance of the Drawbotic_DB1 class
+   * \note A simpler way to access the shared instance is to use the globally defined `DB1` variable
    * \return A reference to the shared instance
    */
   static Drawbotic_DB1 &getInstance(); // Accessor for singleton instance
