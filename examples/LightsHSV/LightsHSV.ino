@@ -1,8 +1,6 @@
 #include <Drawbotic_DB1.h>
 #include "HSV2RGB.h"
 
-DB1 bot;
-
 //Used for delta time calc
 int lastMS = 0;
 
@@ -11,7 +9,7 @@ double hue = 0;
 
 void setup() {
   Serial.begin(9600);
-  bot.init();
+  DB1.init();
 }
 
 void loop() {
@@ -32,7 +30,7 @@ void loop() {
   DB1_Lights newLights;
   for(int i = 0; i < LIGHT_COUNT; i++)
     newLights.colours[i] = { (int)(255 * lightColour.r), (int)(255 * lightColour.g), (int)(255 * lightColour.b) };
-  bot.setLights(newLights);
+  DB1.setLights(newLights);
 
-  bot.updateBatteryLevel();
+  DB1.updateBatteryLevel();
 }

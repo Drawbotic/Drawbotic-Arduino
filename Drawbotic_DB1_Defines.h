@@ -39,6 +39,9 @@ const int TOF_EN_PINS[TOF_COUNT] = { TOF3_EN, TOF2_EN, TOF1_EN };
 //! Default IMU Acceleration sample rate in milliseconds
 #define IMU_ACCEL_MS_DEFAULT   5
 
+//! Default Time of Flight sample rate in milliseconds
+#define TOF_MS_DEFAULT         5
+
 //! Default Servo Up position
 #define SERVO_UP_DEFAULT    25
 //! Default Servo Down position

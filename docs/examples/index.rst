@@ -5,7 +5,6 @@ Examples
 
 .. toctree::
     :maxdepth: 3
-    :glob:
 
     systems_test
     drive_forward

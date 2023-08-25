@@ -98,7 +98,8 @@ struct DB1_ToFSettings {
   float signalRateLimit; //!< The signal rate limit in mega counts per second, this limits the amplitude of the signal reflected from the target and detected by the device.
   uint32_t measurementTimingBudget; //!< The total measurement timing budget in microseconds, this is overall time each measurement takes.
   uint8_t prePclks; //!< The Pre VCSEL Pulse Period
-  uint8_t finalPclks; //!< The FInal VCSEL Pulse Period
+  uint8_t finalPclks; //!< The Final VCSEL Pulse Period
+  uint16_t rate_ms; //!< The sample rate of the sensor
 };
 
 /*!
@@ -127,11 +128,17 @@ enum DB1_ToFLocation {
 typedef void (*DB1_BumpInt_t)();
 
 /*!
- * \brief The class containing all of the functionality of the Drawbotic DB1
+ * \brief The class containing all of the functionality of the Drawbotic DB1. 
+ * \note This class is implemented as a static Singleton. No instance of the class should be created by the user. The shared instance can be access via the globally defined DB1 variable.
  */
-class DB1 {
+class Drawbotic_DB1 {
 public:
-  DB1();
+  //Singleton setup
+  /*!
+   * \brief Accessor for the shared Singleton instance of the Drawbotic_DB1 class
+   * \return A reference to the shared instance
+   */
+  static Drawbotic_DB1 &getInstance(); // Accessor for singleton instance
 
   //Overall bot setup
   bool init();
@@ -209,9 +216,12 @@ public:
   long getM2EncoderDelta();
 
   //Sensor access
-  VEML6040_Colour readColour(bool calibrated = true);
-  int readToFSensor(DB1_ToFLocation location);
-  DB1_IRArray readIRSensors(bool calibrated = true);
+  void startSensors();
+  void stopSensors();
+
+  VEML6040_Colour getColour(bool calibrated = true);
+  DB1_IRArray getIRSensors(bool calibrated = true);
+  int getToFSensor(DB1_ToFLocation location);
   /*!
    * \brief The current Rotation (Quaternion) of the DB1
    * \return The current Rotation (Quaternion) of the DB1 
@@ -221,13 +231,13 @@ public:
    * \brief The current Orientation (heading, pitch, roll) of the DB1
    * \return The current Orientation (heading, pitch, roll) of the DB1 
    */
-  DB1_Orientation getOrientation() { return DB1::QuaternionToEuler(m_currentRotation); }
+  DB1_Orientation getOrientation() { return Drawbotic_DB1::QuaternionToEuler(m_currentRotation); }
   /*!
    * \brief The current Linear Acceleration of the DB1
    * \return The current Linear Acceleration of the DB1 
    */
   DB1_Vector3 getAcceleration() { return m_currentAccel; }
-  void enableBumpInterrupt(DB1_BumpInt_t callback, uint32_t threshold_mg = 1000);
+  void enableBumpInterrupt(DB1_BumpInt_t callback, float threshold_g = 1.0f);
   void disableBumpInterrupt();
 
   //Settings structure
@@ -236,6 +246,17 @@ public:
    * \return The current settings for the DB1 
    */
   DB1_Settings getCurrentSettings() { return m_currentSettings; }
+
+  //Singleton Specific
+  /*!
+   * \brief Delete the copy constructor for Singleton pattern
+   */
+  Drawbotic_DB1(const Drawbotic_DB1 &) = delete; // no copying
+  /*!
+   * \brief Delete the assignment operator for Singleton pattern
+   */
+  Drawbotic_DB1 &operator=(const Drawbotic_DB1 &) = delete;
+
   /*!
    * \brief The default settings for the DB1
    * \return The default settings for the DB1 
@@ -246,6 +267,8 @@ public:
   static DB1_Orientation QuaternionToEuler(DB1_Quaternion q);
 
 private:
+  //Private constructor for singleton
+  Drawbotic_DB1();
   DB1_Settings m_currentSettings;
 
   Servo m_penLift;
@@ -254,9 +277,14 @@ private:
   Drawbotic_VEML6040 m_colourSensor;
   VL53L0X m_tofs[TOF_COUNT];
   Adafruit_BNO08x m_imu;
+  SoftwareTimer m_sensorTimer;
+  bool m_sensorsRunning;
 
   DB1_Quaternion m_currentRotation;
   DB1_Vector3 m_currentAccel;
+
+  int m_tofValues[TOF_COUNT];
+  VEML6040_Colour m_currentColour;
 
   DB1_Lights m_currentLights;
   DB1_Colour m_currentTopLight;
@@ -281,19 +309,30 @@ private:
   double m_m1Speed;
   double m_m2Speed;
 
+  //Bump values
   DB1_BumpInt_t m_bumpCallback;
-  uint32_t m_bumpThreshold;
+  float m_bumpThreshold;
 
-  static DB1* s_instance;
   const static DB1_Settings s_defaultSettings;
 
   static void m1EncoderCallback();
   static void m2EncoderCallback();
-  static void bnoIntCallback();
+
+  static void sensorTask(void*);
+  static void setIMUReports();
+  static long s_lastSensor;
+  static int s_tofTimeBank;
+  static int s_colourTimebank;
+  static void imuIntHandler();
 
   double mapf(double val, double in_min, double in_max, double out_min, double out_max) {
     return (val - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
   }
 };
+
+/*!
+ * \brief The global reference to the shared instace of the Drawbotic_DB1 class
+*/
+extern Drawbotic_DB1 &DB1;
 
 #endif

@@ -1,27 +1,30 @@
 #include "Drawbotic_DB1.h"
 
-//------- Static Methods -------//
-DB1 *DB1::s_instance = NULL;
-
-const DB1_Settings DB1::s_defaultSettings = {
+//------- Static Members -------//
+const DB1_Settings Drawbotic_DB1::s_defaultSettings = {
     {IMU_ORIENT_MS_DEFAULT, IMU_ACCEL_MS_DEFAULT},      // IMU defaults
     {SERVO_PWM, SERVO_UP_DEFAULT, SERVO_DOWN_DEFAULT},  // Servo defaults
     {TOF_TIMEOUT_DEFAULT, TOF_SIGLIM_DEFAULT,
      TOF_TIMING_BUDGET_DEFAULT, TOF_PRE_PCLKS_DEFAULT,
-     TOF_FIN_PCLKS_DEFAULT},                            // ToF defaults
+     TOF_FIN_PCLKS_DEFAULT, TOF_MS_DEFAULT},            // ToF defaults
     VEML6040_IT_40MS,                                   // Default colour sensor int time
     true,                                               // Use encoders
     false,                                              // White Light default
     IR_READ_COUNT_DEFAULT,                              // IR Read Count
 };
 
+long Drawbotic_DB1::s_lastSensor = 0;
+int Drawbotic_DB1::s_tofTimeBank = 0;
+int Drawbotic_DB1::s_colourTimebank = 0;
+
+//------- Static Methods -------//
 /*!
  * \brief Converts a DB1_Quaternion to a Heading, Pitch and Roll Orientation
  * 
  * \param q - The Quaternion to convert
  * \return DB1_Orientation - A new Heading, Pitch and Roll
  */
-DB1_Orientation DB1::QuaternionToEuler(DB1_Quaternion q) {
+DB1_Orientation Drawbotic_DB1::QuaternionToEuler(DB1_Quaternion q) {
   DB1_Orientation result;
 
   float sqr = q.r * q.r;
@@ -30,81 +33,114 @@ DB1_Orientation DB1::QuaternionToEuler(DB1_Quaternion q) {
   float sqk = q.k * q.k;
 
   result.heading = atan2(2.0 * (q.i * q.j + q.k * q.r), (sqi - sqj - sqk + sqr)) * RAD_TO_DEG;
-  result.pitch = asin(-2.0 * (q.i * q.k - q.j * q.r) / (sqi + sqj + sqk + sqr)) * RAD_TO_DEG;
-  result.roll = atan2(2.0 * (q.j * q.k + q.i * q.r), (-sqi - sqj + sqk + sqr)) * RAD_TO_DEG;
+  result.roll = asin(-2.0 * (q.i * q.k - q.j * q.r) / (sqi + sqj + sqk + sqr)) * RAD_TO_DEG;
+  result.pitch = atan2(2.0 * (q.j * q.k + q.i * q.r), (-sqi - sqj + sqk + sqr)) * RAD_TO_DEG;
 
   return result;
 }
 
-void DB1::m1EncoderCallback() {
-  if (s_instance) {
-    int m1EnAState = digitalRead(M1_E_A);
+void Drawbotic_DB1::m1EncoderCallback() {
+  int m1EnAState = digitalRead(M1_E_A);
 
-    if (m1EnAState != s_instance->m_m1EnALastState && m1EnAState == 1) {
-      if (digitalRead(M1_E_B) != m1EnAState)
-        s_instance->m_m1En--;
-      else
-        s_instance->m_m1En++;
-    }
-
-    s_instance->m_m1EnALastState = m1EnAState;
+  if (m1EnAState != DB1.m_m1EnALastState && m1EnAState == 1) {
+    if (digitalRead(M1_E_B) != m1EnAState)
+      DB1.m_m1En--;
+    else
+      DB1.m_m1En++;
   }
+
+  DB1.m_m1EnALastState = m1EnAState;
 }
 
-void DB1::m2EncoderCallback() {
-  if (s_instance) {
-    int m2EnAState = digitalRead(M2_E_A);
+void Drawbotic_DB1::m2EncoderCallback() {
+  int m2EnAState = digitalRead(M2_E_A);
 
-    if (m2EnAState != s_instance->m_m2EnALastState && m2EnAState == 1) {
-      if (digitalRead(M2_E_B) != m2EnAState)
-        s_instance->m_m2En++;
-      else
-        s_instance->m_m2En--;
-    }
-
-    s_instance->m_m2EnALastState = m2EnAState;
+  if (m2EnAState != DB1.m_m2EnALastState && m2EnAState == 1) {
+    if (digitalRead(M2_E_B) != m2EnAState)
+      DB1.m_m2En++;
+    else
+      DB1.m_m2En--;
   }
+
+  DB1.m_m2EnALastState = m2EnAState;
 }
 
-void DB1::bnoIntCallback() {
-  if(s_instance) {
-    sh2_SensorValue_t sensorValue;
-    if (!s_instance->m_imu.getSensorEvent(&sensorValue))
-      return;
+void Drawbotic_DB1::setIMUReports() {
+  DB1.m_imu.enableReport(SH2_ARVR_STABILIZED_RV, DB1.m_currentSettings.imu.orientationRate_ms);
+  DB1.m_imu.enableReport(SH2_LINEAR_ACCELERATION, DB1.m_currentSettings.imu.accelerationRate_ms);
+}
 
+void Drawbotic_DB1::imuIntHandler() {
+  s_imuInt = true;
+}
+
+void Drawbotic_DB1::sensorTask(void*) {
+  if(DB1.m_imu.wasReset()) {
+    setIMUReports();
+  }
+  sh2_SensorValue_t sensorValue;
+  if (DB1.m_imu.getSensorEvent(&sensorValue)) {
     switch(sensorValue.sensorId) {
+      case SH2_ARVR_STABILIZED_RV:
+        DB1.m_currentRotation = {
+          sensorValue.un.arvrStabilizedRV.real,
+          sensorValue.un.arvrStabilizedRV.i,
+          sensorValue.un.arvrStabilizedRV.j,
+          sensorValue.un.arvrStabilizedRV.k,
+        };
+        break;
       case SH2_LINEAR_ACCELERATION:
-        s_instance->m_currentAccel.x = sensorValue.un.linearAcceleration.x;
-        s_instance->m_currentAccel.y = sensorValue.un.linearAcceleration.y;
-        s_instance->m_currentAccel.z = sensorValue.un.linearAcceleration.z;
-        if(s_instance->m_bumpCallback != NULL) {
-          //Check threshold
-          float mag_sq = s_instance->m_currentAccel.x * s_instance->m_currentAccel.x + 
-                         s_instance->m_currentAccel.y * s_instance->m_currentAccel.y + 
-                         s_instance->m_currentAccel.z * s_instance->m_currentAccel.z;
-          if(mag_sq > (s_instance->m_bumpThreshold * s_instance->m_bumpThreshold)) {
-            s_instance->m_bumpCallback();
+        DB1.m_currentAccel = {
+          sensorValue.un.linearAcceleration.x,
+          sensorValue.un.linearAcceleration.y,
+          sensorValue.un.linearAcceleration.z,
+        };
+        if(DB1.m_bumpCallback) {
+          if((DB1.m_currentAccel.x * DB1.m_currentAccel.x + DB1.m_currentAccel.y * DB1.m_currentAccel.y + DB1.m_currentAccel.z * DB1.m_currentAccel.z) > (DB1.m_bumpThreshold * DB1.m_bumpThreshold)) {
+            DB1.m_bumpCallback();
           }
         }
         break;
-      case SH2_ARVR_STABILIZED_RV:
-        s_instance->m_currentRotation.r = sensorValue.un.arvrStabilizedRV.real;
-        s_instance->m_currentRotation.i = sensorValue.un.arvrStabilizedRV.i;
-        s_instance->m_currentRotation.j = sensorValue.un.arvrStabilizedRV.j;
-        s_instance->m_currentRotation.k = sensorValue.un.arvrStabilizedRV.k;
-        break;
     }
   }
+  
+  long current = millis();
+  long deltaTime = current - s_lastSensor;
+  
+  s_tofTimeBank += deltaTime;
+  if(s_tofTimeBank >= DB1.m_currentSettings.tof.rate_ms) {
+    delay(1);
+    for(int i = 0; i < TOF_COUNT; i++) {
+      DB1.m_tofValues[i] = DB1.m_tofs[i].readRangeContinuousMillimeters();
+    }
+    s_tofTimeBank = 0;
+  }
+  
+  s_colourTimebank += deltaTime;
+  if(s_colourTimebank >= Drawbotic_VEML6040::IntegrationTimeToMSec(DB1.m_currentSettings.colourIntTime)) {
+    delay(1);
+    DB1.m_currentColour = DB1.m_colourSensor.getColour();
+    s_colourTimebank = 0;
+  }
+
+  s_lastSensor = current;
 }
 
-//------- Public Methods -------//
+//------- Singleton Specific -------//
+Drawbotic_DB1 &Drawbotic_DB1::getInstance() {
+  static Drawbotic_DB1 instance;
+  return instance;
+}
+
+Drawbotic_DB1 &DB1 = DB1.getInstance();
+
 /*!
  * \brief Construct a new DB1 object
  * 
  */
-DB1::DB1() : m_lights(LIGHT_COUNT, RGB_DOUT, NEO_GRB + NEO_KHZ800),
-             m_topLight(1, STAT_DOUT, NEO_GRB + NEO_KHZ800),
-             m_imu(IMU_RESET) {
+Drawbotic_DB1::Drawbotic_DB1() : m_lights(LIGHT_COUNT, RGB_DOUT, NEO_GRB + NEO_KHZ800),
+                                 m_topLight(1, STAT_DOUT, NEO_GRB + NEO_KHZ800),
+                                 m_imu(-1) {
   for (int i = 0; i < LIGHT_COUNT; i++) {
     m_currentLights.colours[i].red = 0;
     m_currentLights.colours[i].green = 0;
@@ -118,10 +154,12 @@ DB1::DB1() : m_lights(LIGHT_COUNT, RGB_DOUT, NEO_GRB + NEO_KHZ800),
   m_lastM1En = 0;
   m_lastM2En = 0;
 
-  m_currentSettings = getDefaultSettings();
+  m_sensorsRunning = false;
 
-  s_instance = this;
+  m_currentSettings = getDefaultSettings();
 }
+
+//------- Public Methods -------//
 
 /*!
  * \brief Initialise DB1 with Default Settings
@@ -129,8 +167,8 @@ DB1::DB1() : m_lights(LIGHT_COUNT, RGB_DOUT, NEO_GRB + NEO_KHZ800),
  * \return true - Initialisation Completed Successfully
  * \return false - Initialisation failed
  */
-bool DB1::init() {
-  return init(DB1::getDefaultSettings());
+bool Drawbotic_DB1::init() {
+  return init(Drawbotic_DB1::getDefaultSettings());
 }
 
 /*!
@@ -140,7 +178,7 @@ bool DB1::init() {
  * \return true - Initialisation Completed Successfully
  * \return false - Initialisation failed
  */
-bool DB1::init(DB1_Settings settings) {
+bool Drawbotic_DB1::init(DB1_Settings settings) {
   Wire.begin();
   analogWriteResolution(16);
 
@@ -153,7 +191,7 @@ bool DB1::init(DB1_Settings settings) {
   pinMode(LINE3, INPUT);
   pinMode(LINE4, INPUT);
   pinMode(LINE5, INPUT);
-
+  
   pinMode(BATT_LVL1, OUTPUT);
   pinMode(BATT_LVL2, OUTPUT);
   pinMode(BATT_LVL3, OUTPUT);
@@ -197,10 +235,6 @@ bool DB1::init(DB1_Settings settings) {
 
   setupColourSensor(settings.colourIntTime);
 
-  // Setup IMU
-  setupIMU(settings.imu);
-  Serial.println("IMU Done");
-
   // Setup neopixels
   m_lights.begin();
   setLights(m_currentLights);
@@ -215,6 +249,13 @@ bool DB1::init(DB1_Settings settings) {
   setPen(false);
   setWhiteLight(false);
 
+  // Setup IMU
+  setupIMU(settings.imu);
+  Serial.println("IMU Done");
+
+  m_sensorTimer.begin(10, sensorTask);
+  startSensors();
+
   return true;
 }
 
@@ -223,7 +264,7 @@ bool DB1::init(DB1_Settings settings) {
  * 
  * \param on - the desired state for the LED
  */
-void DB1::setWhiteLight(bool on) {
+void Drawbotic_DB1::setWhiteLight(bool on) {
   m_currentSettings.whiteLightOn = on;
   digitalWrite(LED_EN, on);
 }
@@ -233,18 +274,15 @@ void DB1::setWhiteLight(bool on) {
  * 
  * \param settings - A DB1_IMUSettings struct containing the desired settings
  */
-void DB1::setupIMU(DB1_IMUSettings settings) {
-  pinMode(IMU_INT, INPUT_PULLUP);
+void Drawbotic_DB1::setupIMU(DB1_IMUSettings settings) {
+  m_currentSettings.imu = settings;
   if(m_imu.begin_I2C())
     Serial.println("BNO085 started");
   else
     Serial.println("Could not start BNO085");
-
-  m_imu.enableReport(SH2_LINEAR_ACCELERATION, settings.accelerationRate_ms * 1000);
-  m_imu.enableReport(SH2_ARVR_STABILIZED_RV, settings.orientationRate_ms * 1000);
-
-  attachInterrupt(IMU_INT, bnoIntCallback, FALLING);
-  m_currentSettings.imu = settings;
+  setIMUReports();
+  pinMode(IMU_INT, INPUT_PULLUP);
+  attachInterrupt(IMU_INT, imuIntHandler, FALLING);
 }
 
 /*!
@@ -252,7 +290,7 @@ void DB1::setupIMU(DB1_IMUSettings settings) {
  * 
  * \param colourIntTime - The desired integration time for the sensor
  */
-void DB1::setupColourSensor(VEML6040_IntegrationTime colourIntTime) {
+void Drawbotic_DB1::setupColourSensor(VEML6040_IntegrationTime colourIntTime) {
   m_colourSensor.begin();
   m_colourSensor.setConfig(colourIntTime);
   m_currentSettings.colourIntTime = colourIntTime;
@@ -263,7 +301,7 @@ void DB1::setupColourSensor(VEML6040_IntegrationTime colourIntTime) {
  * 
  * \param settings - A DB1_ServoSettings struct containing the desired settings
  */
-void DB1::setupServo(DB1_ServoSettings settings) {
+void Drawbotic_DB1::setupServo(DB1_ServoSettings settings) {
   if (!m_penLift.attached())
     m_penLift.attach(settings.pin);
 
@@ -277,7 +315,7 @@ void DB1::setupServo(DB1_ServoSettings settings) {
  * \param settings - A DB1_ToFSettings struct containing the desired settings
  */
 
-void DB1::setupToFSensor(int index, DB1_ToFSettings settings) {
+void Drawbotic_DB1::setupToFSensor(int index, DB1_ToFSettings settings) {
   m_tofs[index].init();
   m_tofs[index].setTimeout(settings.timeout);
   m_tofs[index].setSignalRateLimit(settings.signalRateLimit);
@@ -294,7 +332,7 @@ void DB1::setupToFSensor(int index, DB1_ToFSettings settings) {
  * 
  * \param encoders - if true, the encoders will be set up and start counting steps
  */
-void DB1::setupMotors(bool encoders) {
+void Drawbotic_DB1::setupMotors(bool encoders) {
   pinMode(M1_DIR_A, OUTPUT);
   pinMode(M1_DIR_B, OUTPUT);
   pinMode(M2_DIR_A, OUTPUT);
@@ -322,9 +360,10 @@ void DB1::setupMotors(bool encoders) {
 }
 
 /*!
- * \brief Calibrates the IR array. If motor power is present, the DB1 will spin on the spot and find the highest and lowest values to use as calibration min and max. Make sure you place the DB1 on a sample that shows the expected darkest and lightest value.
+ * \brief Calibrates the IR array. 
+ * \note If motor power is present, the DB1 will spin on the spot and find the highest and lowest values to use as calibration min and max. Make sure you place the DB1 on a sample that shows the expected darkest and lightest value.
  */
-void DB1::calibrateIRArray() {
+void Drawbotic_DB1::calibrateIRArray() {
   m_irLow.centre = 1024;
   m_irLow.left = 1024;
   m_irLow.right = 1024;
@@ -340,7 +379,7 @@ void DB1::calibrateIRArray() {
   setMotorSpeed(1, 0.1);
   setMotorSpeed(2, -0.1);
   for (int i = 0; i < IR_CALIBRATION_COUNT; i++) {
-    DB1_IRArray ir = readIRSensors(false);
+    DB1_IRArray ir = getIRSensors(false);
     if (ir.centre < m_irLow.centre)
       m_irLow.centre = ir.centre;
     else if (ir.centre > m_irHigh.centre)
@@ -372,26 +411,11 @@ void DB1::calibrateIRArray() {
   setMotorSpeed(2, 0.0);
 
   Serial.println("IR Calibration Complete:");
-  Serial.print("Far Left - Low: ");
-  Serial.print(m_irLow.farLeft);
-  Serial.print(" High: ");
-  Serial.println(m_irHigh.farLeft);
-  Serial.print("Left - Low: ");
-  Serial.print(m_irLow.left);
-  Serial.print(" High: ");
-  Serial.println(m_irHigh.left);
-  Serial.print("Centre - Low: ");
-  Serial.print(m_irLow.centre);
-  Serial.print(" High: ");
-  Serial.println(m_irHigh.centre);
-  Serial.print("Right - Low: ");
-  Serial.print(m_irLow.right);
-  Serial.print(" High: ");
-  Serial.println(m_irHigh.right);
-  Serial.print("Far Right - Low: ");
-  Serial.print(m_irLow.farRight);
-  Serial.print(" High: ");
-  Serial.println(m_irHigh.farRight);
+  Serial.print("Far Left - Low: "); Serial.print(m_irLow.farLeft); Serial.print(" High: "); Serial.println(m_irHigh.farLeft);
+  Serial.print("Left - Low: "); Serial.print(m_irLow.left); Serial.print(" High: "); Serial.println(m_irHigh.left);
+  Serial.print("Centre - Low: "); Serial.print(m_irLow.centre); Serial.print(" High: "); Serial.println(m_irHigh.centre);
+  Serial.print("Right - Low: "); Serial.print(m_irLow.right); Serial.print(" High: "); Serial.println(m_irHigh.right);
+  Serial.print("Far Right - Low: "); Serial.print(m_irLow.farRight); Serial.print(" High: "); Serial.println(m_irHigh.farRight);
 }
 
 /*!
@@ -400,20 +424,21 @@ void DB1::calibrateIRArray() {
  * \param low - The desired lowest values for each sensor
  * \param high - The desired highest value for each sensor
  */
-void DB1::setIRCalibration(DB1_IRArray low, DB1_IRArray high) {
+void Drawbotic_DB1::setIRCalibration(DB1_IRArray low, DB1_IRArray high) {
   m_irLow = low;
   m_irHigh = high;
 }
 
 /*!
- * \brief Calibrates the VEML6040 colour sensor. The DB1 will turn on the white LED and take an average high/white reading then turn off the LED and take an average low/black reading. Make sure you place the DB1 on a white surface
+ * \brief Calibrates the VEML6040 colour sensor. 
+ * \note The DB1 will turn on the white LED and take an average high/white reading then turn off the LED and take an average low/black reading. Make sure you place the DB1 on a white surface
  */
-void DB1::calibrateColourSensor() {
+void Drawbotic_DB1::calibrateColourSensor() {
   bool currentLightSetting = m_currentSettings.whiteLightOn;
   VEML6040_Colour result;
   setWhiteLight(true);
   for (int i = 0; i < COLOUR_CALIBRATION_COUNT; i++) {
-    VEML6040_Colour reading = m_colourSensor.getColour();
+    VEML6040_Colour reading = m_currentColour;
     result.red += reading.red;
     result.green += reading.green;
     result.blue += reading.blue;
@@ -429,7 +454,7 @@ void DB1::calibrateColourSensor() {
   setWhiteLight(false);
   result = {0};
   for (int i = 0; i < COLOUR_CALIBRATION_COUNT; i++) {
-    VEML6040_Colour reading = m_colourSensor.getColour();
+    VEML6040_Colour reading = m_currentColour;
     result.red += reading.red;
     result.green += reading.green;
     result.blue += reading.blue;
@@ -451,7 +476,7 @@ void DB1::calibrateColourSensor() {
  * \param low - The desired low/black value
  * \param high - The desired high/white value
  */
-void DB1::setColourCalibration(VEML6040_Colour low, VEML6040_Colour high) {
+void Drawbotic_DB1::setColourCalibration(VEML6040_Colour low, VEML6040_Colour high) {
   m_colourLow = low;
   m_colourHigh = high;
 }
@@ -461,7 +486,7 @@ void DB1::setColourCalibration(VEML6040_Colour low, VEML6040_Colour high) {
  * 
  * \param lights - A DB1_Lights struct containing the desired colours
  */
-void DB1::setLights(DB1_Lights lights) {
+void Drawbotic_DB1::setLights(DB1_Lights lights) {
   m_lights.clear();
   for (int i = 0; i < LIGHT_COUNT; i++) {
     m_lights.setPixelColor(i, lights.colours[i].red, lights.colours[i].green, lights.colours[i].blue);
@@ -475,7 +500,7 @@ void DB1::setLights(DB1_Lights lights) {
  * 
  * \param light - A DB1_Colour containing the desired colour
  */
-void DB1::setTopLight(DB1_Colour light) {
+void Drawbotic_DB1::setTopLight(DB1_Colour light) {
   m_currentTopLight = light;
   m_topLight.clear();
   m_topLight.setPixelColor(0, m_currentTopLight.red, m_currentTopLight.green, m_currentTopLight.blue);
@@ -488,7 +513,7 @@ void DB1::setTopLight(DB1_Colour light) {
  * \param lights - (Default: true) If true, updates the battery LEDs to reflect current level
  * \return The remaining battery percentage
  */
-float DB1::updateBatteryLevel(bool lights) {
+float Drawbotic_DB1::updateBatteryLevel(bool lights) {
   int battLevel = analogRead(V_DIV_BATT);
 
   float voltage = battLevel;
@@ -520,7 +545,7 @@ float DB1::updateBatteryLevel(bool lights) {
  * 
  * \param down - If true, sets the pen to the down position. If false, sets the pen to the up position
  */
-void DB1::setPen(bool down) {
+void Drawbotic_DB1::setPen(bool down) {
   if (down)
     m_penLift.write(m_currentSettings.servo.penDownPosition);
   else
@@ -532,7 +557,7 @@ void DB1::setPen(bool down) {
  * 
  * \param pos - A position between 0.0 - 1.0 where 0.0 is all the way up and 1.0 is all the way down
  */
-void DB1::setPenServo(double pos) {
+void Drawbotic_DB1::setPenServo(double pos) {
   double newPos = mapf(pos, 0.0, 1.0, m_currentSettings.servo.penUpPosition, m_currentSettings.servo.penDownPosition);
   m_penLift.write(newPos);
 }
@@ -543,7 +568,7 @@ void DB1::setPenServo(double pos) {
  * \param motor - The motor to set the speed of. Valid values are 1 or 2
  * \param speed - The speed to set. Valid values are -1.0 to 1.0 where 1.0 is full speed forward, -1.0 is full spped backwards and 0.0 is no movement
  */
-void DB1::setMotorSpeed(int motor, double speed) {
+void Drawbotic_DB1::setMotorSpeed(int motor, double speed) {
   bool direction = (speed > 0);
   double pwmVal = abs(speed) * 65535.0;
 
@@ -578,7 +603,7 @@ void DB1::setMotorSpeed(int motor, double speed) {
  * 
  * \return The change in the Motor 1 Encoder since the last call to this method
  */
-long DB1::getM1EncoderDelta() {
+long Drawbotic_DB1::getM1EncoderDelta() {
   long delta = m_m1En - m_lastM1En;
   m_lastM1En = m_m1En;
 
@@ -590,11 +615,40 @@ long DB1::getM1EncoderDelta() {
  * 
  * \return The change in the Motor 2 Encoder since the last call to this method
  */
-long DB1::getM2EncoderDelta() {
+long Drawbotic_DB1::getM2EncoderDelta() {
   long delta = m_m2En - m_lastM2En;
   m_lastM2En = m_m2En;
 
   return delta;
+}
+
+/*!
+ * \brief Starts polling the I2C sensors periodically.
+ *
+ * \note The polled values are accessable via their respective get methods
+ * \note The poll rate of the sensors will be defined by their values in the current settings
+ */
+void Drawbotic_DB1::startSensors() {
+  if(m_sensorsRunning)
+    return;
+
+  uint16_t colourMS = Drawbotic_VEML6040::IntegrationTimeToMSec(m_currentSettings.colourIntTime);
+  uint16_t orieMS = m_currentSettings.imu.orientationRate_ms;
+  uint16_t accelMS = m_currentSettings.imu.accelerationRate_ms;
+  uint16_t tofMS = m_currentSettings.tof.rate_ms;
+
+  uint16_t lowest = min(colourMS, min(orieMS, min(accelMS, tofMS)));
+
+  m_sensorTimer.setPeriod(lowest);
+  m_sensorTimer.start();
+}
+
+/*!
+ * \brief Stops polling the I2C sensors
+ */
+void Drawbotic_DB1::stopSensors() {
+  if(m_sensorsRunning)
+    m_sensorTimer.stop();
 }
 
 /*!
@@ -603,17 +657,17 @@ long DB1::getM2EncoderDelta() {
  * \param calibrated - (Default: true) If true, the returned Colour will be corrected by the current calibration values
  * \return The read colour value 
  */
-VEML6040_Colour DB1::readColour(bool calibrated) {
+VEML6040_Colour Drawbotic_DB1::getColour(bool calibrated) {
+  VEML6040_Colour reading = m_currentColour;
+
   if (calibrated) {
-    VEML6040_Colour reading = m_colourSensor.getColour();
     reading.red = constrain(mapf(reading.red, 0, m_colourHigh.red, 0, 255), 0, 255);
     reading.green = constrain(mapf(reading.green, 0, m_colourHigh.green, 0, 255), 0, 255);
     reading.blue = constrain(mapf(reading.blue, 0, m_colourHigh.blue, 0, 255), 0, 255);
     reading.white = constrain(mapf(reading.white, 0, m_colourHigh.white, 0, 255), 0, 255);
-
-    return reading;
   }
-  return m_colourSensor.getColour();
+
+  return reading;
 }
 
 /*!
@@ -622,7 +676,7 @@ VEML6040_Colour DB1::readColour(bool calibrated) {
  * \param calibrated - (Default: true) If true, the returned values will be corrected by the current calibration values
  * \return The read IR values 
  */
-DB1_IRArray DB1::readIRSensors(bool calibrated) {
+DB1_IRArray Drawbotic_DB1::getIRSensors(bool calibrated) {
   DB1_IRArray result; // = {0};
   int centre = 0;
   int left = 0;
@@ -661,17 +715,17 @@ DB1_IRArray DB1::readIRSensors(bool calibrated) {
  * \param location - Which Time of Flight Sensor to read. Valid values are:\n TOF_LEFT\n TOF_CENTRE\n TOF_RIGHT
  * \return The read range in millimetres
  */
-int DB1::readToFSensor(DB1_ToFLocation location) {
-  return m_tofs[location].readRangeContinuousMillimeters();
+int Drawbotic_DB1::getToFSensor(DB1_ToFLocation location) {
+  return m_tofValues[location];
 }
 
 /*!
  * \brief Enables monitoring of high g impacts on the IMU, calls the callback when one occurs
  * 
  * \param callback - A function pointer that is called when the bump occurs. This fuction is run in an interrupt, avoid performing any intensive operations in it
- * \param threshold - (Default: 1000) The threshold in milligs above which the callback will be run
+ * \param threshold - (Default: 1.0) The threshold in gs above which the callback will be run
  */
-void DB1::enableBumpInterrupt(DB1_BumpInt_t callback, uint32_t threshold) {
+void Drawbotic_DB1::enableBumpInterrupt(DB1_BumpInt_t callback, float threshold) {
   m_bumpCallback = callback;
   m_bumpThreshold = threshold;
 }
@@ -679,6 +733,6 @@ void DB1::enableBumpInterrupt(DB1_BumpInt_t callback, uint32_t threshold) {
 /*!
  * \brief Disables the high g monitoring of the IMU
  */
-void DB1::disableBumpInterrupt() {
+void Drawbotic_DB1::disableBumpInterrupt() {
   m_bumpCallback = NULL;
 }
