@@ -21,7 +21,7 @@ int Drawbotic_DB1::s_colourTimebank = 0;
 /*!
  * \brief Converts a DB1_Quaternion to a Heading, Pitch and Roll Orientation
  * 
- * \param q - The Quaternion to convert
+ * \param q The Quaternion to convert
  * \return DB1_Orientation - A new Heading, Pitch and Roll
  */
 DB1_Orientation Drawbotic_DB1::QuaternionToEuler(DB1_Quaternion q) {
