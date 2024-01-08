@@ -16,7 +16,7 @@ Drawbotic_StateMachine::Drawbotic_StateMachine()
  * \param on_exit A pointer to the function that is run when this state is exited
  * \param update A pointer to the function that is run when this state is updated
  */
-void Drawbotic_StateMachine::AddState(int state, Drawbotic_SwitchMethod on_enter, Drawbotic_SwitchMethod on_exit, Drawbotic_UpdateMethod update)
+void Drawbotic_StateMachine::addState(int state, Drawbotic_SwitchMethod on_enter, Drawbotic_SwitchMethod on_exit, Drawbotic_UpdateMethod update)
 {
     m_onEnterMethods[state] = on_enter;
     m_onExitMethods[state] = on_exit;
@@ -28,7 +28,7 @@ void Drawbotic_StateMachine::AddState(int state, Drawbotic_SwitchMethod on_enter
  * 
  * \param state The unique identifier of the desired state
  */
-void Drawbotic_StateMachine::SwitchState(int state)
+void Drawbotic_StateMachine::switchState(int state)
 {
     m_lastState = m_currentState;
     
@@ -46,7 +46,7 @@ void Drawbotic_StateMachine::SwitchState(int state)
  * 
  * \param deltaTime The elapsed time since the last time the state machine was updated. This parameter is passed on to the current state's update function
  */
-void Drawbotic_StateMachine::Update(int deltaTime)
+void Drawbotic_StateMachine::update(int deltaTime)
 {
     if(m_updateMethods[m_currentState] != 0)
         m_updateMethods[m_currentState](deltaTime);

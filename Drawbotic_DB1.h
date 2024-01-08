@@ -116,7 +116,7 @@ struct DB1_Settings {
 };
 
 /*!
- * \brief An enum describing the Time of Flight sensor locations, see readToFSensor
+ * \brief An enum describing the Time of Flight sensor locations, see getToFSensor
  */
 enum DB1_ToFLocation {
   TOF_LEFT,
@@ -215,6 +215,7 @@ public:
 
   long getM1EncoderDelta();
   long getM2EncoderDelta();
+  void resetEncoderDeltas();
 
   //Sensor access
   void startSensors();
@@ -324,7 +325,6 @@ private:
   static long s_lastSensor;
   static int s_tofTimeBank;
   static int s_colourTimebank;
-  static void imuIntHandler();
 
   double mapf(double val, double in_min, double in_max, double out_min, double out_max) {
     return (val - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;

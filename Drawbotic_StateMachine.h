@@ -30,19 +30,19 @@ private:
     
 public:
     Drawbotic_StateMachine();
-    void AddState(int state, Drawbotic_SwitchMethod on_enter, Drawbotic_SwitchMethod on_exit, Drawbotic_UpdateMethod update);
-    void SwitchState(int state);
-    void Update(int deltaTime);
+    void addState(int state, Drawbotic_SwitchMethod on_enter, Drawbotic_SwitchMethod on_exit, Drawbotic_UpdateMethod update);
+    void switchState(int state);
+    void update(int deltaTime);
     /*!
      * \brief The id of the current state the state machine is in
      * \return The id of the current state the state machine is in
      */
-    int GetCurrentState() { return m_currentState; }
+    int getCurrentState() { return m_currentState; }
     /*!
      * \brief The id of the last state the state machine was in
      * \return The id of the last state the state machine was in
      */
-    int GetLastState() { return m_lastState; }
+    int getLastState() { return m_lastState; }
 };
 
 #endif

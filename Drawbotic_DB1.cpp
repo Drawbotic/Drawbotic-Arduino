@@ -32,9 +32,9 @@ DB1_Orientation Drawbotic_DB1::QuaternionToEuler(DB1_Quaternion q) {
   float sqj = q.j * q.j;
   float sqk = q.k * q.k;
 
-  result.heading = atan2(2.0 * (q.i * q.j + q.k * q.r), (sqi - sqj - sqk + sqr)) * RAD_TO_DEG;
-  result.roll = asin(-2.0 * (q.i * q.k - q.j * q.r) / (sqi + sqj + sqk + sqr)) * RAD_TO_DEG;
-  result.pitch = atan2(2.0 * (q.j * q.k + q.i * q.r), (-sqi - sqj + sqk + sqr)) * RAD_TO_DEG;
+  result.heading = (atan2(2.0 * (q.i * q.j + q.k * q.r), (sqi - sqj - sqk + sqr)) * RAD_TO_DEG) + 180.0f;
+  result.roll = (asin(-2.0 * (q.i * q.k - q.j * q.r) / (sqi + sqj + sqk + sqr)) * RAD_TO_DEG) + 180.0f;
+  result.pitch = (atan2(2.0 * (q.j * q.k + q.i * q.r), (-sqi - sqj + sqk + sqr)) * RAD_TO_DEG) + 180.0f;
 
   return result;
 }
@@ -66,12 +66,8 @@ void Drawbotic_DB1::m2EncoderCallback() {
 }
 
 void Drawbotic_DB1::setIMUReports() {
-  DB1.m_imu.enableReport(SH2_ARVR_STABILIZED_RV, DB1.m_currentSettings.imu.orientationRate_ms);
+  DB1.m_imu.enableReport(SH2_ROTATION_VECTOR, DB1.m_currentSettings.imu.orientationRate_ms);
   DB1.m_imu.enableReport(SH2_LINEAR_ACCELERATION, DB1.m_currentSettings.imu.accelerationRate_ms);
-}
-
-void Drawbotic_DB1::imuIntHandler() {
-  s_imuInt = true;
 }
 
 void Drawbotic_DB1::sensorTask(void*) {
@@ -81,7 +77,7 @@ void Drawbotic_DB1::sensorTask(void*) {
   sh2_SensorValue_t sensorValue;
   if (DB1.m_imu.getSensorEvent(&sensorValue)) {
     switch(sensorValue.sensorId) {
-      case SH2_ARVR_STABILIZED_RV:
+      case SH2_ROTATION_VECTOR:
         DB1.m_currentRotation = {
           sensorValue.un.arvrStabilizedRV.real,
           sensorValue.un.arvrStabilizedRV.i,
@@ -174,7 +170,7 @@ bool Drawbotic_DB1::init() {
 /*!
  * \brief Initialise DB1 with Custom Settings
  * 
- * \param settings - A DB1_Settings struct containing the desired settings
+ * \param settings A DB1_Settings struct containing the desired settings
  * \return true - Initialisation Completed Successfully
  * \return false - Initialisation failed
  */
@@ -229,11 +225,13 @@ bool Drawbotic_DB1::init(DB1_Settings settings) {
     m_tofs[i].setAddress(TOF_ADDRESSES[i]);
     setupToFSensor(i, settings.tof);
     Serial.print("Set up complete for ToF 0x");
+    Serial.flush();
     Serial.println(TOF_ADDRESSES[i], HEX);
   }
   Serial.println("Tofs Done");
 
   setupColourSensor(settings.colourIntTime);
+  Serial.println("RGB Done");
 
   // Setup neopixels
   m_lights.begin();
@@ -243,8 +241,8 @@ bool Drawbotic_DB1::init(DB1_Settings settings) {
   m_topLight.begin();
   setTopLight(m_currentTopLight);
   m_topLight.show();
-
-  Serial.println("RGB Done");
+  Serial.println("Neopixels set");
+  Serial.flush();
 
   setPen(false);
   setWhiteLight(false);
@@ -262,7 +260,7 @@ bool Drawbotic_DB1::init(DB1_Settings settings) {
 /*!
  * \brief Turns the White LED for the colour sensor on/off
  * 
- * \param on - the desired state for the LED
+ * \param on The desired state for the LED
  */
 void Drawbotic_DB1::setWhiteLight(bool on) {
   m_currentSettings.whiteLightOn = on;
@@ -272,7 +270,7 @@ void Drawbotic_DB1::setWhiteLight(bool on) {
 /*!
  * \brief Configues the BNO085 IMU to use the provided settings
  * 
- * \param settings - A DB1_IMUSettings struct containing the desired settings
+ * \param settings A DB1_IMUSettings struct containing the desired settings
  */
 void Drawbotic_DB1::setupIMU(DB1_IMUSettings settings) {
   m_currentSettings.imu = settings;
@@ -281,17 +279,18 @@ void Drawbotic_DB1::setupIMU(DB1_IMUSettings settings) {
   else
     Serial.println("Could not start BNO085");
   setIMUReports();
-  pinMode(IMU_INT, INPUT_PULLUP);
-  attachInterrupt(IMU_INT, imuIntHandler, FALLING);
 }
 
 /*!
  * \brief Configures the VEML6040 RGBW colour sensor
  * 
- * \param colourIntTime - The desired integration time for the sensor
+ * \param colourIntTime The desired integration time for the sensor
  */
 void Drawbotic_DB1::setupColourSensor(VEML6040_IntegrationTime colourIntTime) {
-  m_colourSensor.begin();
+  if(m_colourSensor.begin())
+    Serial.println("VEML6040 started");
+  else
+    Serial.println("Could not start VEML6040");
   m_colourSensor.setConfig(colourIntTime);
   m_currentSettings.colourIntTime = colourIntTime;
 }
@@ -299,7 +298,7 @@ void Drawbotic_DB1::setupColourSensor(VEML6040_IntegrationTime colourIntTime) {
 /*!
  * \brief Configures the Pen Lift servo to use the desired settings
  * 
- * \param settings - A DB1_ServoSettings struct containing the desired settings
+ * \param settings A DB1_ServoSettings struct containing the desired settings
  */
 void Drawbotic_DB1::setupServo(DB1_ServoSettings settings) {
   if (!m_penLift.attached())
@@ -311,8 +310,8 @@ void Drawbotic_DB1::setupServo(DB1_ServoSettings settings) {
 /*!
  * \brief Configures one of the VL53L0X time of flight sensors to use the desired settings
  * 
- * \param index - The index of the sensor to configure
- * \param settings - A DB1_ToFSettings struct containing the desired settings
+ * \param index The index of the sensor to configure
+ * \param settings A DB1_ToFSettings struct containing the desired settings
  */
 
 void Drawbotic_DB1::setupToFSensor(int index, DB1_ToFSettings settings) {
@@ -330,7 +329,7 @@ void Drawbotic_DB1::setupToFSensor(int index, DB1_ToFSettings settings) {
 /*!
  * \brief Configures the motors
  * 
- * \param encoders - if true, the encoders will be set up and start counting steps
+ * \param encoders If true, the encoders will be set up and start counting steps
  */
 void Drawbotic_DB1::setupMotors(bool encoders) {
   pinMode(M1_DIR_A, OUTPUT);
@@ -421,8 +420,8 @@ void Drawbotic_DB1::calibrateIRArray() {
 /*!
  * \brief Sets the IR calibration min and max to the provided values. Useful if you have already determined the lightest and darkest features
  * 
- * \param low - The desired lowest values for each sensor
- * \param high - The desired highest value for each sensor
+ * \param low The desired lowest values for each sensor
+ * \param high The desired highest value for each sensor
  */
 void Drawbotic_DB1::setIRCalibration(DB1_IRArray low, DB1_IRArray high) {
   m_irLow = low;
@@ -473,8 +472,8 @@ void Drawbotic_DB1::calibrateColourSensor() {
 /*!
  * \brief Sets the colour calibration to the provided high/white and low/black readings
  * 
- * \param low - The desired low/black value
- * \param high - The desired high/white value
+ * \param low The desired low/black value
+ * \param high The desired high/white value
  */
 void Drawbotic_DB1::setColourCalibration(VEML6040_Colour low, VEML6040_Colour high) {
   m_colourLow = low;
@@ -484,7 +483,7 @@ void Drawbotic_DB1::setColourCalibration(VEML6040_Colour low, VEML6040_Colour hi
 /*!
  * \brief Sets the bottom side RGB LEDs to the provided colours
  * 
- * \param lights - A DB1_Lights struct containing the desired colours
+ * \param lights A DB1_Lights struct containing the desired colours
  */
 void Drawbotic_DB1::setLights(DB1_Lights lights) {
   m_lights.clear();
@@ -498,7 +497,7 @@ void Drawbotic_DB1::setLights(DB1_Lights lights) {
 /*!
  * \brief Sets the top side RGB LED to the provided colour
  * 
- * \param light - A DB1_Colour containing the desired colour
+ * \param light A DB1_Colour containing the desired colour
  */
 void Drawbotic_DB1::setTopLight(DB1_Colour light) {
   m_currentTopLight = light;
@@ -510,7 +509,7 @@ void Drawbotic_DB1::setTopLight(DB1_Colour light) {
 /*!
  * \brief Reads the current battery level
  * 
- * \param lights - (Default: true) If true, updates the battery LEDs to reflect current level
+ * \param lights (Default: true) If true, updates the battery LEDs to reflect current level
  * \return The remaining battery percentage
  */
 float Drawbotic_DB1::updateBatteryLevel(bool lights) {
@@ -543,7 +542,7 @@ float Drawbotic_DB1::updateBatteryLevel(bool lights) {
 /*!
  * \brief Updates the state of the pen
  * 
- * \param down - If true, sets the pen to the down position. If false, sets the pen to the up position
+ * \param down If true, sets the pen to the down position. If false, sets the pen to the up position
  */
 void Drawbotic_DB1::setPen(bool down) {
   if (down)
@@ -555,7 +554,7 @@ void Drawbotic_DB1::setPen(bool down) {
 /*!
  * \brief Sets the poistion of the pen to an arbitrary point 
  * 
- * \param pos - A position between 0.0 - 1.0 where 0.0 is all the way up and 1.0 is all the way down
+ * \param pos A position between 0.0 - 1.0 where 0.0 is all the way up and 1.0 is all the way down
  */
 void Drawbotic_DB1::setPenServo(double pos) {
   double newPos = mapf(pos, 0.0, 1.0, m_currentSettings.servo.penUpPosition, m_currentSettings.servo.penDownPosition);
@@ -565,8 +564,8 @@ void Drawbotic_DB1::setPenServo(double pos) {
 /*!
  * \brief Sets the speed of a specific motor
  * 
- * \param motor - The motor to set the speed of. Valid values are 1 or 2
- * \param speed - The speed to set. Valid values are -1.0 to 1.0 where 1.0 is full speed forward, -1.0 is full spped backwards and 0.0 is no movement
+ * \param motor The motor to set the speed of. Valid values are 1 or 2
+ * \param speed The speed to set. Valid values are -1.0 to 1.0 where 1.0 is full speed forward, -1.0 is full spped backwards and 0.0 is no movement
  */
 void Drawbotic_DB1::setMotorSpeed(int motor, double speed) {
   bool direction = (speed > 0);
@@ -623,6 +622,16 @@ long Drawbotic_DB1::getM2EncoderDelta() {
 }
 
 /*!
+ * \brief Resets the delta values of the encoders.
+ *
+ * \note This should be done when starting a new encoder based operation as the deltas can be incorrect if not periodically read.
+ */
+void Drawbotic_DB1::resetEncoderDeltas() {
+  m_lastM1En = m_m1En;
+  m_lastM2En = m_m2En;
+}
+
+/*!
  * \brief Starts polling the I2C sensors periodically.
  *
  * \note The polled values are accessable via their respective get methods
@@ -654,7 +663,7 @@ void Drawbotic_DB1::stopSensors() {
 /*!
  * \brief Reads the current colour from the VEML6040 colour sensor
  * 
- * \param calibrated - (Default: true) If true, the returned Colour will be corrected by the current calibration values
+ * \param calibrated (Default: true) If true, the returned Colour will be corrected by the current calibration values
  * \return The read colour value 
  */
 VEML6040_Colour Drawbotic_DB1::getColour(bool calibrated) {
@@ -673,7 +682,7 @@ VEML6040_Colour Drawbotic_DB1::getColour(bool calibrated) {
 /*!
  * \brief Reads the current values from the IR line detectors
  * 
- * \param calibrated - (Default: true) If true, the returned values will be corrected by the current calibration values
+ * \param calibrated (Default: true) If true, the returned values will be corrected by the current calibration values
  * \return The read IR values 
  */
 DB1_IRArray Drawbotic_DB1::getIRSensors(bool calibrated) {
@@ -712,7 +721,7 @@ DB1_IRArray Drawbotic_DB1::getIRSensors(bool calibrated) {
 /*!
  * \brief Reads the current range from a specific VL53L0X Time of Flight Sensor
  * 
- * \param location - Which Time of Flight Sensor to read. Valid values are:\n TOF_LEFT\n TOF_CENTRE\n TOF_RIGHT
+ * \param location Which Time of Flight Sensor to read. Valid values are:\n TOF_LEFT\n TOF_CENTRE\n TOF_RIGHT
  * \return The read range in millimetres
  */
 int Drawbotic_DB1::getToFSensor(DB1_ToFLocation location) {
@@ -722,8 +731,8 @@ int Drawbotic_DB1::getToFSensor(DB1_ToFLocation location) {
 /*!
  * \brief Enables monitoring of high g impacts on the IMU, calls the callback when one occurs
  * 
- * \param callback - A function pointer that is called when the bump occurs. This fuction is run in an interrupt, avoid performing any intensive operations in it
- * \param threshold - (Default: 1.0) The threshold in gs above which the callback will be run
+ * \param callback A function pointer that is called when the bump occurs. This fuction is run in an interrupt, avoid performing any intensive operations in it
+ * \param threshold (Default: 1.0) The threshold in gs above which the callback will be run
  */
 void Drawbotic_DB1::enableBumpInterrupt(DB1_BumpInt_t callback, float threshold) {
   m_bumpCallback = callback;
