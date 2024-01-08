@@ -4,7 +4,7 @@ Library Reference
 =================
 
 .. toctree::
-    :maxdepth: 3
+    :maxdepth: 2
 
     drawbotic_db1
     drawbotic_db1_colour
