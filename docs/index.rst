@@ -13,7 +13,7 @@ Drawbotic Arduino Library
 Table of Contents
 ^^^^^^^^^^^^^^^^^
 .. toctree::
-    :maxdepth: 3
+    :maxdepth: 2
 
     self
     examples/index
