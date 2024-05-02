@@ -37,46 +37,46 @@ void Pen_Loop() {
 }
 
 void RGB_Loop() {
-  DB1_Lights newLights;
+  db1_lights_t newLights;
 
   //Set all lights to red
-  for(int i = 0; i < LIGHT_COUNT; i++)
-    newLights.colours[i] = {255, 0, 0};
+  for(int i = 0; i < DB1_LIGHT_COUNT; i++)
+    newLights.led[i] = {255, 0, 0};
   
   DB1.setLights(newLights);
   delay(500);
 
   //Set all lights to yellow
-  for(int i = 0; i < LIGHT_COUNT; i++)
-    newLights.colours[i] = {255, 255, 0};
+  for(int i = 0; i < DB1_LIGHT_COUNT; i++)
+    newLights.led[i] = {255, 255, 0};
   
   DB1.setLights(newLights);
   delay(500);
 
   //Set all lights to green
-  for(int i = 0; i < LIGHT_COUNT; i++)
-    newLights.colours[i] = {0, 255, 0};
+  for(int i = 0; i < DB1_LIGHT_COUNT; i++)
+    newLights.led[i] = {0, 255, 0};
   
   DB1.setLights(newLights);
   delay(500);
 
   //Set all lights to cyan
-  for(int i = 0; i < LIGHT_COUNT; i++)
-    newLights.colours[i] = {0, 255, 255};
+  for(int i = 0; i < DB1_LIGHT_COUNT; i++)
+    newLights.led[i] = {0, 255, 255};
   
   DB1.setLights(newLights);
   delay(500);
 
   //Set all lights to blue
-  for(int i = 0; i < LIGHT_COUNT; i++)
-    newLights.colours[i] = {0, 0, 255};
+  for(int i = 0; i < DB1_LIGHT_COUNT; i++)
+    newLights.led[i] = {0, 0, 255};
   
   DB1.setLights(newLights);
   delay(500);
 
   //Set all lights to purple
-  for(int i = 0; i < LIGHT_COUNT; i++)
-    newLights.colours[i] = {255, 0, 255};
+  for(int i = 0; i < DB1_LIGHT_COUNT; i++)
+    newLights.led[i] = {255, 0, 255};
   
   DB1.setLights(newLights);
   delay(500);
@@ -84,8 +84,8 @@ void RGB_Loop() {
 
 void Motors_Loop() {
   //Set motor speed
-  DB1.setMotorSpeed(1, 0.1);
-  DB1.setMotorSpeed(2, -0.1);
+  DB1.setMotorSpeed(DB1_M1, 0.1);
+  DB1.setMotorSpeed(DB1_M2, -0.1);
 
   //Print encoder values
   Serial.print("M1:\t"); Serial.print(DB1.getM1Encoder());
@@ -96,76 +96,78 @@ void Motors_Loop() {
 
 void ToF_Loop() {
   //Read and Print all three Time of Flight sensors
-  Serial.print(DB1.getToFSensor(TOF_LEFT)); Serial.print("\t\t");
-  Serial.print(DB1.getToFSensor(TOF_CENTRE)); Serial.print("\t\t");
-  Serial.println(DB1.getToFSensor(TOF_RIGHT));
+  Serial.print(DB1.getToFSensor(DB1_TOF_LEFT)); Serial.print("\t\t");
+  Serial.print(DB1.getToFSensor(DB1_TOF_CENTRE)); Serial.print("\t\t");
+  Serial.println(DB1.getToFSensor(DB1_TOF_RIGHT));
 
   delay(50);
 }
 
 void IRCali_Loop() {
   //Read calibrated values of IR sensors
-  DB1_IRArray reading = DB1.getIRSensors(true);
+  db1_ir_array_t reading = DB1.getIRSensors(true);
 
   //Print each value
-  Serial.print(reading.farLeft); Serial.print("\t\t");
+  Serial.print(reading.far_left); Serial.print("\t\t");
   Serial.print(reading.left); Serial.print("\t");
   Serial.print(reading.centre); Serial.print("\t");
   Serial.print(reading.right); Serial.print("\t\t");
-  Serial.println(reading.farRight);
+  Serial.println(reading.far_right);
 
   delay(50);
 }
 
 void IRRaw_Loop() {
   //Read raw values of IR sensors
-  DB1_IRArray reading = DB1.getIRSensors(false);
+  db1_ir_array_t reading = DB1.getIRSensors(false);
 
   //Print each value
-  Serial.print(reading.farLeft); Serial.print("\t\t");
+  Serial.print(reading.far_left); Serial.print("\t\t");
   Serial.print(reading.left); Serial.print("\t");
   Serial.print(reading.centre); Serial.print("\t");
   Serial.print(reading.right); Serial.print("\t\t");
-  Serial.println(reading.farRight);
+  Serial.println(reading.far_right);
 
   delay(50);
 }
 
 void Colour_Loop() {
   DB1.setWhiteLight(true);
-  VEML6040_Colour reading = DB1.getColour(true);
+  db1_colour_reading_t reading = DB1.getColour(true);
 
-  Serial.print("R:\t"); Serial.print(reading.red); 
-  Serial.print("\tG:\t"); Serial.print(reading.green); 
-  Serial.print("\tB:\t"); Serial.println(reading.blue);
+  Serial.print("R:\t"); Serial.print(reading.r); 
+  Serial.print("\tG:\t"); Serial.print(reading.g); 
+  Serial.print("\tB:\t"); Serial.print(reading.b);
+  Serial.print("\tW:\t"); Serial.println(reading.w);
 
-  DB1_Colour lightColour = { (uint8_t)reading.red, (uint8_t)reading.green, (uint8_t)reading.blue };
+  db1_colour_t lightColour = { (uint8_t)reading.r, (uint8_t)reading.g, (uint8_t)reading.b };
   DB1.setTopLight(lightColour);
   delay(50);
 }
 
 void IMU_Loop() {
-  DB1_Orientation o = DB1.getOrientation();
-  DB1_Vector3 a = DB1.getAcceleration();
+  db1_orientation_t o = DB1.getOrientation();
+  db1_vector_t a = DB1.getAcceleration();
 
   Serial.print("Heading:\t"); Serial.print(o.heading);
   Serial.print("\tPitch:\t"); Serial.print(o.pitch);
   Serial.print("\tRoll:\t"); Serial.print(o.roll);
   Serial.print("\tX:\t"); Serial.print(a.x);
   Serial.print("\tY:\t"); Serial.print(a.y);
-  Serial.print("\tZ:\t"); Serial.println(a.z);
+  Serial.print("\tZ:\t"); Serial.print(a.z);
+  Serial.print("\tBump:\t"); Serial.println(DB1.wasBumped());
 
   delay(10);
 }
 
 void Sensor_Loop() {
-  DB1_Orientation o = DB1.getOrientation();
-  DB1_Vector3 a = DB1.getAcceleration();
-  VEML6040_Colour c = DB1.getColour(false);
+  db1_orientation_t o = DB1.getOrientation();
+  db1_vector_t a = DB1.getAcceleration();
+  db1_colour_reading_t c = DB1.getColour(false);
 
-  Serial.print(DB1.getToFSensor(TOF_LEFT)); Serial.print("\t");
-  Serial.print(DB1.getToFSensor(TOF_CENTRE)); Serial.print("\t");
-  Serial.print(DB1.getToFSensor(TOF_RIGHT));
+  Serial.print(DB1.getToFSensor(DB1_TOF_LEFT)); Serial.print("\t");
+  Serial.print(DB1.getToFSensor(DB1_TOF_CENTRE)); Serial.print("\t");
+  Serial.print(DB1.getToFSensor(DB1_TOF_RIGHT));
 
   Serial.print("\tHeading:\t"); Serial.print(o.heading);
   Serial.print("\tPitch:\t"); Serial.print(o.pitch);
@@ -174,9 +176,10 @@ void Sensor_Loop() {
   Serial.print("\tY:\t"); Serial.print(a.y);
   Serial.print("\tZ:\t"); Serial.print(a.z);
 
-  Serial.print("\tR:\t"); Serial.print(c.red); 
-  Serial.print("\tG:\t"); Serial.print(c.green); 
-  Serial.print("\tB:\t"); Serial.println(c.blue);
+  Serial.print("\tR:\t"); Serial.print(c.r); 
+  Serial.print("\tG:\t"); Serial.print(c.g); 
+  Serial.print("\tB:\t"); Serial.print(c.b);
+  Serial.print("\tW:\t"); Serial.println(c.w);
 
   delay(100);
 }

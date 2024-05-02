@@ -27,9 +27,9 @@ void loop() {
   rgb lightColour = hsv2rgb({hue * 360.0, 1.0, 1.0});
 
   //Update the lights with new colour
-  DB1_Lights newLights;
-  for(int i = 0; i < LIGHT_COUNT; i++)
-    newLights.colours[i] = { (int)(255 * lightColour.r), (int)(255 * lightColour.g), (int)(255 * lightColour.b) };
+  db1_lights_t newLights;
+  for(int i = 0; i < DB1_LIGHT_COUNT; i++)
+    newLights.led[i] = { (int)(255 * lightColour.r), (int)(255 * lightColour.g), (int)(255 * lightColour.b) };
   DB1.setLights(newLights);
 
   DB1.updateBatteryLevel();

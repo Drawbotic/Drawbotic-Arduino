@@ -5,3 +5,4 @@ xml/
 _build/
 _static/
 _templates/
+.vscode

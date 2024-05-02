@@ -13,42 +13,33 @@ void setup() {
 
 void loop() {
   //Read ToF sensors before anything else
-  int tofLeft = DB1.getToFSensor(TOF_LEFT);
-  int tofCentre = DB1.getToFSensor(TOF_CENTRE);
-  int tofRight = DB1.getToFSensor(TOF_RIGHT);
+  int tofLeft = DB1.getToFSensor(DB1_TOF_LEFT);
+  int tofCentre = DB1.getToFSensor(DB1_TOF_CENTRE);
+  int tofRight = DB1.getToFSensor(DB1_TOF_RIGHT);
 
   if(tofCentre < TOF_TH) { //If the centre ToF is triggered
     if(tofRight >  tofLeft) { //If there is more space to the right...
       //...turn right
-      onSpotTurn(0.2);
-    }
-    else if(tofLeft > tofRight) { //If there is more space to the left...
-      //...turn left
       onSpotTurn(-0.2);
     }
-    else {
-      //Turn a random direction
-      if(random(0,2) == 1) {
-        onSpotTurn(0.2);
-      }
-      else {
-        onSpotTurn(-0.2);
-      }
+    else { //If there is more space to the left...
+      //...turn left
+      onSpotTurn(0.2);
     }
     //Keep turning until clear
-    while(DB1.getToFSensor(TOF_CENTRE) < TOF_TH){}
+    while(DB1.getToFSensor(DB1_TOF_CENTRE) < TOF_TH){}
   }
   else if(tofLeft < TOF_TH) { //If the left ToF is triggered
     //Turn right
     onSpotTurn(-0.2);
     //Keep turning until clear
-    while(DB1.getToFSensor(TOF_LEFT) < TOF_TH){}
+    while(DB1.getToFSensor(DB1_TOF_LEFT) < TOF_TH){}
   }
   else if(tofRight < TOF_TH) { //If the right ToF is triggered
     //Turn left
     onSpotTurn(0.2);
     //Keep turning until clear
-    while(DB1.getToFSensor(TOF_RIGHT) < TOF_TH){}
+    while(DB1.getToFSensor(DB1_TOF_RIGHT) < TOF_TH){}
   }
   else { //If no ToF sensors are triggered, then drive forward
     //Find the difference between the two encoders since last read
@@ -56,8 +47,8 @@ void loop() {
 
     //Calculate the second motor power based on the error value and the correction "strength" factor
     followPower += error * kp;
-    DB1.setMotorSpeed(1, power);
-    DB1.setMotorSpeed(2, followPower);  //Negate the speed to deal with mirrored motors
+    DB1.setMotorSpeed(DB1_M1, power);
+    DB1.setMotorSpeed(DB1_M2, followPower);  //Negate the speed to deal with mirrored motors
   }
   
   DB1.updateBatteryLevel();   //Update the battery level
@@ -69,6 +60,6 @@ void onSpotTurn(double power) {
 }
 
 void turn(double power, double turnAmount) {
-  DB1.setMotorSpeed(1, power);
-  DB1.setMotorSpeed(2, -power * turnAmount);
+  DB1.setMotorSpeed(DB1_M1, power);
+  DB1.setMotorSpeed(DB1_M2, -power * turnAmount);
 }

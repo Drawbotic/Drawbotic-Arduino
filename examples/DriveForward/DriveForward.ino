@@ -18,8 +18,8 @@ void loop() {
   followPower += (error * kp);
 
   //The first motor is set to the target speed. The second is set to the corrected follow speed
-  DB1.setMotorSpeed(1, power);
-  DB1.setMotorSpeed(2, followPower);
+  DB1.setMotorSpeed(DB1_M1, power);
+  DB1.setMotorSpeed(DB1_M2, followPower);
 
   //Update the battery lights on the DB-1
   DB1.updateBatteryLevel();
