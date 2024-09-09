@@ -1,7 +1,7 @@
 .. _drawbotic_db1_quaternion:
 
-DB1_Quaternion Struct
-=====================
+db1_quaternion_t Struct
+=======================
 
-.. doxygenstruct:: DB1_Quaternion
+.. doxygenstruct:: db1_quaternion_t
     :project: Drawbotic-Arduino

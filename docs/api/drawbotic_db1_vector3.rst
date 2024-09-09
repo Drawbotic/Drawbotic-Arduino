@@ -1,7 +1,7 @@
 .. _drawbotic_db1_vector3:
 
-DB1_Vector3 Struct
-==================
+db1_vector_t Struct
+===================
 
-.. doxygenstruct:: DB1_Vector3
+.. doxygenstruct:: db1_vector_t
     :project: Drawbotic-Arduino

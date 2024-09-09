@@ -78,7 +78,7 @@ public:
   
   /*!
    * \brief Configures the motors
-   * \param encoders If true, the encoders will be set up and start counting steps
+   * \param useEncoders If true, the encoders will be set up and start counting steps
    */
   void setupMotors(bool useEncoders) {
     db1_init_motors(useEncoders);
@@ -355,7 +355,7 @@ private:
 };
 
 /*!
- * \brief The global reference to the shared instace of the Drawbotic_DB1 class
+ * \brief The global reference to the shared instance of the Drawbotic_DB1 class
  */
 extern Drawbotic_DB1 &DB1;
 

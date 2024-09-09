@@ -13,7 +13,7 @@ subprocess.call('doxygen Doxyfile', shell=True)
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'Drawbotic Arduino Library'
-copyright = '2023, Elliott Wilson'
+copyright = '2024, Drawbotic'
 author = 'Elliott Wilson'
 
 # -- General configuration ---------------------------------------------------
@@ -69,3 +69,4 @@ breathe_projects = {
 }
 breathe_default_project = "Drawbotic-Arduino"
 breathe_default_members = ('members', 'undoc-members')
+breathe_show_define_initializer = True

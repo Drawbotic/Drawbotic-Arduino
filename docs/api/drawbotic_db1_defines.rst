@@ -3,6 +3,6 @@
 DB1 Defines
 =====================
 
-.. doxygenfile:: Drawbotic_DB1_Defines.h
+.. doxygenfile:: drawbotic_types.h
     :project: Drawbotic-Arduino
     :sections: define var

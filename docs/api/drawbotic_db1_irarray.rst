@@ -1,7 +1,7 @@
 .. _drawbotic_db1_irarray:
 
-DB1_IRArray Struct
-==================
+db1_ir_array_t Struct
+=====================
 
-.. doxygenstruct:: DB1_IRArray
+.. doxygenstruct:: db1_ir_array_t
     :project: Drawbotic-Arduino

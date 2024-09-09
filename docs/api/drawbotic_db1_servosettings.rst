@@ -1,7 +1,7 @@
 .. _drawbotic_db1_servosettings:
 
-DB1_ServoSettings Struct
-========================
+db1_servo_settings_t Struct
+===========================
 
-.. doxygenstruct:: DB1_ServoSettings
+.. doxygenstruct:: db1_servo_settings_t
     :project: Drawbotic-Arduino

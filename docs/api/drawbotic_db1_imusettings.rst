@@ -1,7 +1,7 @@
 .. _drawbotic_db1_imusettings:
 
-DB1_IMUSettings Struct
-======================
+db1_imu_settings_t Struct
+=========================
 
-.. doxygenstruct:: DB1_IMUSettings
+.. doxygenstruct:: db1_imu_settings_t
     :project: Drawbotic-Arduino

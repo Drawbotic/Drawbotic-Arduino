@@ -1,7 +1,7 @@
 .. _drawbotic_db1_tofsettings:
 
-DB1_ToFSettings Struct
-======================
+db1_tof_settings_t Struct
+=========================
 
-.. doxygenstruct:: DB1_ToFSettings
+.. doxygenstruct:: db1_tof_settings_t
     :project: Drawbotic-Arduino

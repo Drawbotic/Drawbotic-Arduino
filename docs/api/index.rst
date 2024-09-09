@@ -18,5 +18,8 @@ Library Reference
     drawbotic_db1_servosettings
     drawbotic_db1_tofsettings
     drawbotic_db1_toflocation
+    drawbotic_veml_int
+    drawbotic_vl53l0x_config
     drawbotic_db1_defines
     drawbotic_statemachine
+    drawbotic_navigation

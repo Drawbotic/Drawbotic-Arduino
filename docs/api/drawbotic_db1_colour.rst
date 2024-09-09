@@ -1,7 +1,7 @@
 .. _drawbotic_db1_colour:
 
-DB1_Colour Struct
-=================
+db1_colour_t Struct
+===================
 
-.. doxygenstruct:: DB1_Colour
+.. doxygenstruct:: db1_colour_t
     :project: Drawbotic-Arduino

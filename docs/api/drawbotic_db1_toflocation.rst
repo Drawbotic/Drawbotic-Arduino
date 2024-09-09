@@ -1,7 +1,7 @@
 .. _drawbotic_db1_toflocation:
 
-DB1_ToFLocation Enum
-====================
+db1_tof_location_t Enum
+=======================
 
-.. doxygenenum:: DB1_ToFLocation
+.. doxygenenum:: db1_tof_location_t
     :project: Drawbotic-Arduino

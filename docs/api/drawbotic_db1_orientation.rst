@@ -1,7 +1,7 @@
 .. _drawbotic_db1_orientation:
 
-DB1_Orientation Struct
-======================
+db1_orientation_t Struct
+========================
 
-.. doxygenstruct:: DB1_Orientation
+.. doxygenstruct:: db1_orientation_t
     :project: Drawbotic-Arduino
