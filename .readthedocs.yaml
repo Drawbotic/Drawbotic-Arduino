@@ -22,5 +22,5 @@ python:
   - requirements: docs/requirements.txt
   
 submodules:
-  include: []
-  recursive: false
+  include: all
+  recursive: true
