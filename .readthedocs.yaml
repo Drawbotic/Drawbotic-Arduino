@@ -22,5 +22,4 @@ python:
   - requirements: docs/requirements.txt
 
 submodules:
-  include:
-    - db1_drv
+  include: all
