@@ -22,5 +22,5 @@ python:
   - requirements: docs/requirements.txt
   
 submodules:
-  include: all
-  recursive: true
+  include:
+    - src/db1
