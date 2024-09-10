@@ -1,3 +1,3 @@
 [submodule "src/db1"]
 	path = src/db1
-	url = git@github.com:Drawbotic/db1_drv.git
+	url = https://github.com/Drawbotic/db1_drv.git
